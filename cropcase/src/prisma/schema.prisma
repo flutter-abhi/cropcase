@@ -1,0 +1,44 @@
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+}
+
+model Crop {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  season    String   // e.g. "Summer", "Winter"
+  description String 
+  duration  Int
+}
+
+
+model Case {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  name        String
+  description String?
+  totalLand   Float    // Total acres/land area
+  location    String?  // Farm location
+  isPublic    Boolean  @default(false)   // For community sharing
+  startDate   DateTime?
+  endDate     DateTime?
+  budget      Float?   // Estimated budget
+  likes       Int      @default(0)       // For community cases
+  crops       CaseCrop[]
+  tags        CaseTag[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CaseCrop {
+  id        String   @id @default(uuid())
+  caseId    String
+  cropId    String
+  weight    Int      // % allocation of land
+  case      Case     @relation(fields: [caseId], references: [id])
+  crop      Crop     @relation(fields: [cropId], references: [id])
+}
+
