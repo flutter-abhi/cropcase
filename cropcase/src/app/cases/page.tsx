@@ -1,108 +1,28 @@
 "use client";
 
-import { useState } from 'react';
-import Navigation from "@/component/homePageComponent/navbar";
-import CaseCard from "@/component/homePageComponent/CaseCard";
-import CreateCaseButton from "@/component/CreateCaseButton";
-import { Filter, Search } from "lucide-react";
-
-// Dummy JSON data - simulating API response
-const dummyCasesData = {
-    userCases: [
-        {
-            id: "1",
-            name: "Summer Wheat & Corn",
-            crops: [
-                { name: "Wheat", weight: 60, season: "Summer" },
-                { name: "Corn", weight: 40, season: "Summer" }
-            ],
-            user: { name: "John Farmer", email: "john@example.com" },
-            createdAt: new Date("2024-01-15"),
-            totalLand: 25,
-            isOwner: true
-        },
-        {
-            id: "2",
-            name: "Mixed Vegetable Garden",
-            crops: [
-                { name: "Tomatoes", weight: 30, season: "Summer" },
-                { name: "Lettuce", weight: 25, season: "Spring" },
-                { name: "Carrots", weight: 20, season: "Fall" },
-                { name: "Peppers", weight: 25, season: "Summer" }
-            ],
-            user: { name: "John Farmer", email: "john@example.com" },
-            createdAt: new Date("2024-02-10"),
-            totalLand: 15,
-            isOwner: true
-        },
-        {
-            id: "3",
-            name: "Winter Crop Rotation",
-            crops: [
-                { name: "Barley", weight: 50, season: "Winter" },
-                { name: "Oats", weight: 50, season: "Winter" }
-            ],
-            user: { name: "John Farmer", email: "john@example.com" },
-            createdAt: new Date("2024-03-05"),
-            totalLand: 10,
-            isOwner: true
-        },
-        {
-            id: "4",
-            name: "Spring Organic Farm",
-            crops: [
-                { name: "Spinach", weight: 40, season: "Spring" },
-                { name: "Radish", weight: 30, season: "Spring" },
-                { name: "Broccoli", weight: 30, season: "Spring" }
-            ],
-            user: { name: "John Farmer", email: "john@example.com" },
-            createdAt: new Date("2024-04-01"),
-            totalLand: 12,
-            isOwner: true
-        },
-        {
-            id: "5",
-            name: "Large Scale Corn Production",
-            crops: [
-                { name: "Corn", weight: 80, season: "Summer" },
-                { name: "Soybeans", weight: 20, season: "Fall" }
-            ],
-            user: { name: "John Farmer", email: "john@example.com" },
-            createdAt: new Date("2024-05-10"),
-            totalLand: 50,
-            isOwner: true
-        },
-        {
-            id: "6",
-            name: "Greenhouse Vegetables",
-            crops: [
-                { name: "Tomatoes", weight: 35, season: "Summer" },
-                { name: "Cucumbers", weight: 25, season: "Summer" },
-                { name: "Bell Peppers", weight: 20, season: "Summer" },
-                { name: "Herbs", weight: 20, season: "Spring" }
-            ],
-            user: { name: "John Farmer", email: "john@example.com" },
-            createdAt: new Date("2024-06-15"),
-            totalLand: 8,
-            isOwner: true
-        }
-    ],
-    totalCases: 6,
-    totalLandManaged: 120
-};
+import React from 'react';
+import Navigation from "@/components/homePageComponent/navbar";
+import CaseCard from "@/components/homePageComponent/CaseCard";
+import CreateCaseButton from "@/components/CreateCaseButton";
+import { RefreshCw, Sprout } from "lucide-react";
+import { usePaginatedCases, useFilters, usePagination } from "@/hooks/usePaginatedCases";
+import { Pagination } from "@/components/pagination/PaginationControls";
+import { FilterControls } from "@/components/filters/FilterControls";
+import { CaseSkeletonGrid } from "@/components/loading/CaseSkeleton";
 
 export default function Cases() {
-    const [searchTerm, setSearchTerm] = useState("");
-    const [filterSeason, setFilterSeason] = useState("all");
+    const paginatedCases = usePaginatedCases();
+    const filters = useFilters();
+    const pagination = usePagination();
 
-    // Filter cases based on search and season
-    const filteredCases = dummyCasesData.userCases.filter(caseItem => {
-        const matchesSearch = caseItem.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            caseItem.crops.some(crop => crop.name.toLowerCase().includes(searchTerm.toLowerCase()));
-        const matchesSeason = filterSeason === "all" ||
-            caseItem.crops.some(crop => crop.season.toLowerCase() === filterSeason.toLowerCase());
-        return matchesSearch && matchesSeason;
-    });
+    const {
+        data: cases,
+        loading,
+        error,
+        stats,
+        refresh,
+        isEmpty,
+    } = paginatedCases;
 
     return (
         <div className="min-h-screen bg-background">
@@ -113,80 +33,101 @@ export default function Cases() {
                 <div className="mx-auto max-w-7xl">
                     <div className="flex items-center justify-between mb-8">
                         <div>
-                            <h1 className="text-4xl font-bold text-foreground">My Cases</h1>
-                            <p className="text-muted-foreground mt-2">
-                                Manage your crop portfolio • {dummyCasesData.totalCases} cases • {dummyCasesData.totalLandManaged} acres
+                            <h1 className="text-3xl font-bold text-foreground">My Cases</h1>
+                            <p className="text-muted-foreground mt-1">
+                                Manage your crop portfolio • {stats.totalCases} cases • {stats.totalLand} acres
                             </p>
                         </div>
-                        <CreateCaseButton variant="hero" />
-                    </div>
-
-                    {/* Search and Filter Bar */}
-                    <div className="flex flex-col sm:flex-row gap-4 mb-8">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <input
-                                type="text"
-                                placeholder="Search cases or crops..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-2 border border-border rounded-lg bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                            />
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Filter className="h-4 w-4 text-muted-foreground" />
-                            <select
-                                value={filterSeason}
-                                onChange={(e) => setFilterSeason(e.target.value)}
-                                className="px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                            >
-                                <option value="all">All Seasons</option>
-                                <option value="spring">Spring</option>
-                                <option value="summer">Summer</option>
-                                <option value="fall">Fall</option>
-                                <option value="winter">Winter</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    {/* Results Count */}
-                    <div className="mb-6">
-                        <p className="text-sm text-muted-foreground">
-                            Showing {filteredCases.length} of {dummyCasesData.totalCases} cases
-                        </p>
-                    </div>
-
-                    {/* Cases Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredCases.map((caseData) => (
-                            <CaseCard key={caseData.id} caseData={caseData} />
-                        ))}
-                    </div>
-
-                    {/* Empty State */}
-                    {filteredCases.length === 0 && (
-                        <div className="text-center py-12">
-                            <div className="inline-flex items-center justify-center w-16 h-16 bg-muted rounded-full mb-4">
-                                <Search className="h-8 w-8 text-muted-foreground" />
-                            </div>
-                            <h3 className="text-lg font-semibold text-foreground mb-2">No cases found</h3>
-                            <p className="text-muted-foreground mb-4">
-                                Try adjusting your search terms or filters
-                            </p>
+                        <div className="flex items-center gap-3">
                             <button
-                                onClick={() => {
-                                    setSearchTerm("");
-                                    setFilterSeason("all");
-                                }}
-                                className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm font-medium text-foreground hover:bg-accent transition-colors"
+                                onClick={refresh}
+                                disabled={loading}
+                                className="inline-flex items-center gap-2 px-3 py-2 border border-border rounded-lg text-sm font-medium text-foreground hover:bg-accent transition-colors disabled:opacity-50"
                             >
-                                Clear Filters
+                                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                                Refresh
+                            </button>
+                            <CreateCaseButton variant="section" />
+                        </div>
+                    </div>
+
+                    {/* Filter Controls */}
+                    <div className="mb-8">
+                        <FilterControls
+                            filters={filters}
+                            availableSeasons={['Spring', 'Summer', 'Autumn', 'Winter']}
+                            availableTags={['Organic', 'Hydroponic', 'Traditional', 'Experimental']}
+                        />
+                    </div>
+
+                    {/* Loading State */}
+                    {loading && (
+                        <div className="mb-8">
+                            <CaseSkeletonGrid count={6} />
+                        </div>
+                    )}
+
+                    {/* Error State */}
+                    {error && (
+                        <div className="p-4 border border-red-200 rounded-lg bg-red-50 dark:bg-red-900/10 dark:border-red-800 mb-8">
+                            <p className="text-red-600 dark:text-red-400">{error}</p>
+                            <button
+                                onClick={refresh}
+                                className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+                            >
+                                Try Again
                             </button>
                         </div>
                     )}
+
+                    {/* Cases Grid */}
+                    {!loading && !error && (
+                        <>
+                            {!isEmpty ? (
+                                <>
+                                    {/* Cases Grid */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                                        {cases.filter(c => c.isOwner).map((caseData) => (
+                                            <CaseCard key={caseData.id} caseData={caseData} />
+                                        ))}
+                                    </div>
+
+                                    {/* Pagination */}
+                                    <Pagination
+                                        pagination={pagination}
+                                        itemName="cases"
+                                        className="mt-8"
+                                    />
+                                </>
+                            ) : (
+                                <div className="text-center py-12">
+                                    <div className="inline-flex items-center justify-center w-16 h-16 bg-muted rounded-full mb-4">
+                                        <Sprout className="h-8 w-8 text-muted-foreground" />
+                                    </div>
+                                    <h3 className="text-lg font-semibold text-foreground mb-2">No cases found</h3>
+                                    <p className="text-muted-foreground mb-4">
+                                        {filters.hasActiveFilters
+                                            ? "Try adjusting your filters or create a new case"
+                                            : "Create your first crop case to get started with portfolio management"
+                                        }
+                                    </p>
+                                    <div className="flex items-center justify-center gap-3">
+                                        {filters.hasActiveFilters && (
+                                            <button
+                                                onClick={filters.clearFilters}
+                                                className="px-4 py-2 border border-border rounded-lg text-sm font-medium text-foreground hover:bg-accent transition-colors"
+                                            >
+                                                Clear Filters
+                                            </button>
+                                        )}
+                                        <CreateCaseButton variant="section" />
+                                    </div>
+                                </div>
+                            )}
+                        </>
+                    )}
                 </div>
             </section>
-
         </div>
     );
 }

@@ -1,10 +1,27 @@
-import Navigation from "@/component/homePageComponent/navbar";
-import { Sprout, Calendar, PieChart, MapPin, Users, BarChart3, ArrowRight } from "lucide-react";
-import CaseCard from "@/component/homePageComponent/CaseCard";
-import CreateCaseButton from "@/component/CreateCaseButton";
+"use client";
+
+import { useEffect } from "react";
+import Navigation from "@/components/homePageComponent/navbar";
+import { Sprout, Calendar, PieChart, MapPin, Users, BarChart3, ArrowRight, RefreshCw, Loader2 } from "lucide-react";
+import CaseCard from "@/components/homePageComponent/CaseCard";
+import CreateCaseButton from "@/components/CreateCaseButton";
 import Link from "next/link";
+import { useCases } from "@/hooks/useCases";
 
 export default function Home() {
+  const {
+    cases,
+    loading,
+    error,
+    totalStats,
+    fetchCases,
+    refreshCases
+  } = useCases();
+
+  // Fetch cases on component mount
+  useEffect(() => {
+    fetchCases();
+  }, [fetchCases]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -122,58 +139,69 @@ export default function Home() {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h2 className="text-3xl font-bold text-foreground">My Cases</h2>
-              <p className="text-muted-foreground mt-1">Manage your crop portfolio</p>
+              <p className="text-muted-foreground mt-1">
+                Manage your crop portfolio • {totalStats.totalCases} cases • {totalStats.totalLandManaged} acres
+              </p>
             </div>
-            <CreateCaseButton variant="section" />
+            <div className="flex items-center gap-3">
+              <button
+                onClick={refreshCases}
+                disabled={loading}
+                className="inline-flex items-center gap-2 px-3 py-2 border border-border rounded-lg text-sm font-medium text-foreground hover:bg-accent transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+              <CreateCaseButton variant="section" />
+            </div>
           </div>
 
+          {/* Loading State */}
+          {loading && (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
+                <p className="text-muted-foreground">Loading your cases...</p>
+              </div>
+            </div>
+          )}
+
+          {/* Error State */}
+          {error && (
+            <div className="p-4 border border-red-200 rounded-lg bg-red-50 dark:bg-red-900/10 dark:border-red-800">
+              <p className="text-red-600 dark:text-red-400">{error}</p>
+              <button
+                onClick={refreshCases}
+                className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+              >
+                Try Again
+              </button>
+            </div>
+          )}
+
           {/* Cases Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <CaseCard
-              caseData={{
-                id: "1",
-                name: "Summer Wheat & Corn",
-                crops: [
-                  { name: "Wheat", weight: 60, season: "Summer" },
-                  { name: "Corn", weight: 40, season: "Summer" }
-                ],
-                user: { name: "John Farmer", email: "john@example.com" },
-                createdAt: new Date("2024-01-15"),
-                totalLand: 25,
-                isOwner: true
-              }}
-            />
-            <CaseCard
-              caseData={{
-                id: "2",
-                name: "Mixed Vegetable Garden",
-                crops: [
-                  { name: "Tomatoes", weight: 30, season: "Summer" },
-                  { name: "Lettuce", weight: 25, season: "Spring" },
-                  { name: "Carrots", weight: 20, season: "Fall" },
-                  { name: "Peppers", weight: 25, season: "Summer" }
-                ],
-                user: { name: "John Farmer", email: "john@example.com" },
-                createdAt: new Date("2024-02-10"),
-                totalLand: 15,
-                isOwner: true
-              }}
-            />
-            <CaseCard
-              caseData={{
-                id: "3",
-                name: "Winter Crop Rotation",
-                crops: [
-                  { name: "Barley", weight: 50, season: "Winter" },
-                  { name: "Oats", weight: 50, season: "Winter" }
-                ],
-                user: { name: "John Farmer", email: "john@example.com" },
-                createdAt: new Date("2024-03-05"),
-                totalLand: 10,
-                isOwner: true
-              }}
-            />
-          </div>
+          {!loading && !error && (
+            <>
+              {cases.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {cases.filter(c => c.isOwner).map((caseData) => (
+                    <CaseCard key={caseData.id} caseData={caseData} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-muted rounded-full mb-4">
+                    <Sprout className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">No cases yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Create your first crop case to get started with portfolio management
+                  </p>
+                  <CreateCaseButton variant="section" />
+                </div>
+              )}
+            </>
+          )}
         </div>
       </section>
 
@@ -188,7 +216,6 @@ export default function Home() {
             </div>
             <Link href="/communityCases">
               <button
-
                 className="inline-flex items-center gap-2 px-4 py-2 border border-border rounded-lg font-medium text-sm transition-all duration-200 hover:bg-accent hover:border-primary/50 hover:scale-105 group">
                 View All Cases
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform duration-200" />
@@ -197,52 +224,31 @@ export default function Home() {
           </div>
 
           {/* Community Cases Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <CaseCard
-              caseData={{
-                id: "4",
-                name: "Community Wheat Farm",
-                crops: [
-                  { name: "Wheat", weight: 70, season: "Summer" },
-                  { name: "Barley", weight: 30, season: "Winter" }
-                ],
-                user: { name: "Sarah Johnson", email: "sarah@example.com" },
-                createdAt: new Date("2024-04-05"),
-                totalLand: 40,
-                isOwner: false
-              }}
-            />
-            <CaseCard
-              caseData={{
-                id: "5",
-                name: "Organic Vegetable Mix",
-                crops: [
-                  { name: "Tomatoes", weight: 35, season: "Summer" },
-                  { name: "Lettuce", weight: 25, season: "Spring" },
-                  { name: "Carrots", weight: 20, season: "Fall" },
-                  { name: "Spinach", weight: 20, season: "Winter" }
-                ],
-                user: { name: "Mike Chen", email: "mike@example.com" },
-                createdAt: new Date("2024-03-20"),
-                totalLand: 20,
-                isOwner: false
-              }}
-            />
-            <CaseCard
-              caseData={{
-                id: "6",
-                name: "Sustainable Corn Rotation",
-                crops: [
-                  { name: "Corn", weight: 60, season: "Summer" },
-                  { name: "Soybeans", weight: 40, season: "Fall" }
-                ],
-                user: { name: "Emily Davis", email: "emily@example.com" },
-                createdAt: new Date("2024-02-15"),
-                totalLand: 35,
-                isOwner: false
-              }}
-            />
-          </div>
+          {!loading && !error && (
+            <>
+              {cases.filter(c => !c.isOwner).length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {cases.filter(c => !c.isOwner).slice(0, 3).map((caseData) => (
+                    <CaseCard
+                      key={caseData.id}
+                      caseData={caseData}
+                      isCommunity={true}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-background rounded-full mb-4">
+                    <Users className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">No community cases yet</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Be the first to share your farming knowledge with the community
+                  </p>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </section>
 
@@ -261,8 +267,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-
     </div>
   );
 }

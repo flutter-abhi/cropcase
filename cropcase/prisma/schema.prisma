@@ -1,15 +1,111 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+// Enums
+enum UserRole {
+  USER
+  ADMIN
+  MODERATOR
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  password  String   // Hashed password
+  avatar    String?  // Profile picture URL
+  role      UserRole @default(USER)
+  isVerified Boolean @default(false)
+  lastLoginAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  cases     Case[]
+  likes     CaseLike[]
+  refreshTokens RefreshToken[]
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  
+  @@map("refresh_tokens")
+}
+
+model Crop {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  season      String   // e.g. "Summer", "Winter", "Spring", "Fall"
+  description String?
+  duration    Int?     // Growing duration in days
+  
+  // Relations
+  caseCrops   CaseCrop[]
+  @@map("crops")
+}
+
+model Case {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  name        String
+  description String?
+  totalLand   Float    // Total acres/land area
+  location    String?  // Farm location
+  isPublic    Boolean  @default(false)   // For community sharing
+  startDate   DateTime?
+  endDate     DateTime?
+  budget      Float?   // Estimated budget
+  notes       String?  // Additional notes
+  status      String   @default("active") // active, completed, paused
+  efficiency  Float?   // Calculated efficiency percentage
+  estimatedProfit Float? // Estimated profit calculation
+  views           Int     @default(0) // View count for community cases
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  crops       CaseCrop[]
+  tags        String
+  likes       CaseLike[]  
+  @@map("cases")
+}
+
+model CaseCrop {
+  id        String   @id @default(uuid())
+  caseId    String
+  cropId    String
+  weight    Int      // % allocation of land
+  notes     String?  // Specific notes for this crop in this case
+  case      Case     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  crop      Crop     @relation(fields: [cropId], references: [id])
+  
+  @@unique([caseId, cropId])
+  @@map("case_crops")
+}
+
+model CaseLike {
+  id     String @id @default(uuid())
+  caseId String
+  userId String
+  case   Case   @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id])
+  
+  @@unique([caseId, userId])
+  @@map("case_likes")
 }
