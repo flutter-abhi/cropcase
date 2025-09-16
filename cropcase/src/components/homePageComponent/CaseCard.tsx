@@ -12,18 +12,24 @@ import {
     Share2
 } from 'lucide-react';
 import { UICaseData } from '@/types/ui';
+import { useLike } from '@/hooks/useLike';
 
 interface CaseCardProps {
     caseData: UICaseData;
     // Community mode props (optional)
     isCommunity?: boolean;
-    onLike?: (caseId: string) => void;
-    isLiked?: boolean;
 }
 
-export default function CaseCard({ caseData, isCommunity = false, onLike, isLiked = false }: CaseCardProps) {
-    const { name, crops, user, createdAt, totalLand, isOwner, likes, views, location, description, tags } = caseData;
+export default function CaseCard({ caseData, isCommunity = false }: CaseCardProps) {
+    const { name, crops, user, createdAt, totalLand, isOwner, likes, isLiked: initialIsLiked, views, location, description, tags, id } = caseData;
     const [mounted, setMounted] = useState(false);
+
+    // Use like functionality for community cases
+    const { isLiked, likeCount, isLoading, toggleLike } = useLike({
+        caseId: id,
+        initialLiked: initialIsLiked || false,
+        initialLikeCount: likes || 0,
+    });
 
     useEffect(() => {
         setMounted(true);
@@ -61,10 +67,11 @@ export default function CaseCard({ caseData, isCommunity = false, onLike, isLike
             {isCommunity && (
                 <>
                     {/* Like Button */}
-                    {onLike && (
+                    {!isOwner && (
                         <button
-                            onClick={() => onLike(caseData.id)}
-                            className={`absolute top-4 right-4 z-10 p-2 rounded-full transition-colors ${isLiked
+                            onClick={toggleLike}
+                            disabled={isLoading}
+                            className={`absolute top-4 right-4 z-10 p-2 rounded-full transition-colors disabled:opacity-50 ${isLiked
                                 ? 'text-red-500 bg-red-50 dark:bg-red-900/20'
                                 : 'text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'
                                 }`}
@@ -74,12 +81,12 @@ export default function CaseCard({ caseData, isCommunity = false, onLike, isLike
                     )}
 
                     {/* Community Stats */}
-                    {(likes !== undefined || views !== undefined) && (
+                    {(likeCount !== undefined || views !== undefined) && (
                         <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
-                            {likes !== undefined && (
+                            {likeCount !== undefined && (
                                 <div className="flex items-center gap-1 px-2 py-1 bg-background/80 backdrop-blur-sm rounded-full text-xs text-muted-foreground">
                                     <Heart className="h-3 w-3" />
-                                    {likes + (isLiked ? 1 : 0)}
+                                    {likeCount}
                                 </div>
                             )}
                             {views !== undefined && (

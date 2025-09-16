@@ -22,20 +22,8 @@ export interface PaginatedResponse<T> {
     pagination: PaginationMeta;
 }
 
-// My Cases API
-export interface MyCasesResponse {
-    cases: UICaseData[];
-    stats: {
-        totalCases: number;
-        totalLand: number;
-        averageLandPerCase: number;
-    };
-    pagination: PaginationMeta;
-}
-
-// Community Cases API
 export interface CommunityCasesResponse {
-    cases: UICaseData[];
+    data: unknown;
     stats: {
         totalCommunityCases: number;
         totalFarmers: number;
@@ -56,7 +44,7 @@ export interface SearchParams extends PaginationParams {
 }
 
 export interface SearchResponse {
-    cases: UICaseData[];
+    data: UICaseData[];
     filters: {
         appliedFilters: Partial<SearchParams>;
         availableSeasons: string[];

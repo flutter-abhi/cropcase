@@ -41,15 +41,16 @@ export default function Navigation() {
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 <div className="flex justify-between h-16">
                     <div className="flex items-center">
-                        <div className="flex-shrink-0 flex items-center">
-                            <div className="p-2 rounded-lg bg-primary/10">
-                                <Sprout className="h-6 w-6 text-primary" />
+                        <Link href="/">
+                            <div className="flex-shrink-0 flex items-center">
+                                <div className="p-2 rounded-lg bg-primary/10">
+                                    <Sprout className="h-6 w-6 text-primary" />
+                                </div>
+                                <span className="ml-2 text-xl font-bold text-foreground">
+                                    CropCase
+                                </span>
                             </div>
-                            <span className="ml-2 text-xl font-bold text-foreground">
-                                CropCase
-                            </span>
-                        </div>
-
+                        </Link>
                         {/* Desktop Navigation */}
                         <div className="hidden md:ml-10 md:flex md:space-x-8">
                             {navigation.map((item) => {

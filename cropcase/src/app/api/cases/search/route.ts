@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import redis from '@/lib/redis';
 import { SearchResponse, ApiErrorResponse } from '@/types/api';
 import { UICaseData } from '@/types/ui';
 
@@ -31,6 +32,20 @@ export async function GET(request: NextRequest) {
 
         // Calculate offset
         const offset = (page - 1) * limit;
+
+        // Build cache key for search
+        const cacheKey = `search:q:${q}:season:${season || 'all'}:land:${minLand || 'min'}-${maxLand || 'max'}:tags:${tags.join(',')}:user:${userId || 'all'}:page:${page}:limit:${limit}:sort:${sortBy}:${sortOrder}`;
+
+        // Try to get from cache first
+        try {
+            const cachedData = await redis.get(cacheKey);
+            if (cachedData) {
+                console.log('✅ Cache HIT for search API');
+                return NextResponse.json(JSON.parse(cachedData));
+            }
+        } catch (cacheError) {
+            console.log('⚠️ Cache error (continuing with DB):', cacheError.message);
+        }
 
         // Build where clause - simplified version
         interface WhereClause {
@@ -178,6 +193,14 @@ export async function GET(request: NextRequest) {
                 hasPrev
             }
         };
+
+        // Cache the response for 3 minutes (shorter TTL for search results)
+        try {
+            await redis.setex(cacheKey, 300, JSON.stringify(response));
+            console.log('💾 Cached search API response');
+        } catch (cacheError) {
+            console.log('⚠️ Failed to cache search response:', cacheError.message);
+        }
 
         return NextResponse.json(response);
 

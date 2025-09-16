@@ -4,6 +4,12 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/themeProvider";
 import { AuthProvider } from "@/hooks/useAuthProvider";
 import { ToastProvider } from "@/components/Toast";
+import { setupGracefulShutdown } from "@/lib/gracefulShutdown";
+
+// Initialize graceful shutdown handlers
+if (typeof window === 'undefined') {
+  setupGracefulShutdown();
+}
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

@@ -117,7 +117,7 @@ export class PaginatedCaseService {
 
         // Use main cases endpoint with pagination parameters
         const requestPromise = this.makeRequest(
-            '/api/cases',
+            '/api/cases/my-cases',
             { page, limit, userId }
         );
 
@@ -159,23 +159,19 @@ export class PaginatedCaseService {
             return this.pendingRequests.get(cacheKey)!;
         }
 
-        // Use main cases endpoint with pagination parameters (no userId to get ALL cases)
-        const requestPromise = this.makeRequest(
-            '/api/cases',
-            { page, limit }
-        );
+        // Use community cases endpoint to get public cases excluding current user
+        const requestPromise = this.makeRequest('/api/cases/community', {
+            page,
+            limit,
+            userId: excludeUserId
+        });
 
         this.pendingRequests.set(cacheKey, requestPromise);
 
         try {
             const response = await requestPromise;
 
-            // Filter out user's own cases for community view
-            if (excludeUserId && response.data) {
-                response.data = response.data.filter((case_: ApiCaseResponse) => case_.userId !== excludeUserId);
-            }
-
-            // Cache the response
+            // Cache the response (API already handles filtering)
             this.cacheManager.set(cacheKey, response.data, response.pagination);
 
             return response;

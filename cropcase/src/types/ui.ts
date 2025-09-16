@@ -16,6 +16,7 @@ export interface UICaseData {
     isOwner: boolean;
     // Optional fields for community features
     likes?: number;
+    isLiked?: boolean;
     views?: number;
     location?: string;
     description?: string;

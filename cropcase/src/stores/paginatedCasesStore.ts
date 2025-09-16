@@ -320,6 +320,9 @@ export const usePaginatedCasesStore = create<PaginatedCasesState>()(
 
             refreshCurrentPage: async () => {
                 const { currentPage } = get().pagination;
+                // Clear cache to ensure fresh data
+                get().clearCache();
+                paginatedCaseService.clearCache();
                 return get().fetchPage(currentPage, true);
             },
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import redis from '@/lib/redis';
 import { CommunityCasesResponse, ApiErrorResponse } from '@/types/api';
 import { UICaseData } from '@/types/ui';
 
@@ -33,6 +34,20 @@ export async function GET(request: NextRequest) {
         // Calculate offset
         const offset = (page - 1) * limit;
 
+        // Build cache key for community cases
+        const cacheKey = `community:user:${userId}:page:${page}:limit:${limit}:sort:${sortBy}:${sortOrder}`;
+
+        // Try to get from cache first
+        try {
+            const cachedData = await redis.get(cacheKey);
+            if (cachedData) {
+                console.log('✅ Cache HIT for community API');
+                return NextResponse.json(JSON.parse(cachedData));
+            }
+        } catch (cacheError) {
+            console.log('⚠️ Cache error (continuing with DB):', (cacheError as Error).message);
+        }
+
         // Build sort order
         const orderBy: Record<string, 'asc' | 'desc'> = {};
         orderBy[sortBy] = sortOrder as 'asc' | 'desc';
@@ -55,6 +70,12 @@ export async function GET(request: NextRequest) {
                             id: true,
                             name: true,
                             email: true
+                        }
+                    },
+                    likes: {
+                        select: {
+                            id: true,
+                            userId: true
                         }
                     }
                 },
@@ -111,30 +132,10 @@ export async function GET(request: NextRequest) {
         const averageLikesPerCase = totalCommunityCases > 0 ? totalLikes / totalCommunityCases : 0;
 
         // Transform cases to include crop details
-        const transformedCases = cases.map(case_ => ({
-            id: case_.id,
-            name: case_.name,
-            description: case_.description,
-            totalLand: case_.totalLand,
-            location: case_.location,
-            tags: case_.tags ? case_.tags.split(',').filter(tag => tag.trim()) : [],
-            isPublic: case_.isPublic,
-            createdAt: case_.createdAt,
-            updatedAt: case_.updatedAt,
-            userId: case_.userId,
-            user: case_.user,
-            crops: case_.crops.map(cropCase => ({
-                name: cropCase.crop.name,
-                weight: cropCase.weight,
-                season: cropCase.crop.season,
-                notes: cropCase.notes
-            })),
-            likes: (case_ as { likes?: unknown[] }).likes?.length || 0,
-            views: case_.views || 0
-        }));
 
-        const response: CommunityCasesResponse = {
-            cases: transformedCases as unknown as UICaseData[],
+
+        const response = {
+            data: cases,
             stats: {
                 totalCommunityCases,
                 totalFarmers,
@@ -150,6 +151,15 @@ export async function GET(request: NextRequest) {
                 hasPrev
             }
         };
+
+
+        // Cache the response for 5 minutes (medium TTL for community data)
+        try {
+            await redis.setex(cacheKey, 300, JSON.stringify(response));
+            console.log('💾 Cached community API response');
+        } catch (cacheError: unknown) {
+            console.log('⚠️ Failed to cache community response:', (cacheError as Error).message);
+        }
 
         return NextResponse.json(response);
 

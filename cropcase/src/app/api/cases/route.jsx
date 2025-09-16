@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "../../../lib/prisma";
+import redis from "../../../lib/redis";
 
 // GET /api/cases - Fetch all cases with relations (with optional pagination)
 export async function GET(request) {
@@ -17,6 +18,20 @@ export async function GET(request) {
             const pageNum = parseInt(page || '1');
             const limitNum = Math.min(parseInt(limit || '10'), 50);
             const offset = (pageNum - 1) * limitNum;
+
+            // Build cache key
+            const cacheKey = `cases:page:${pageNum}:limit:${limitNum}:user:${filterUserId || 'all'}`;
+
+            // Try to get from cache first
+            try {
+                const cachedData = await redis.get(cacheKey);
+                if (cachedData) {
+                    console.log('✅ Cache HIT for cases API');
+                    return NextResponse.json(JSON.parse(cachedData));
+                }
+            } catch (cacheError) {
+                console.log('⚠️ Cache error (continuing with DB):', cacheError.message);
+            }
 
             // Build where clause
             const whereClause = {};
@@ -63,7 +78,7 @@ export async function GET(request) {
             const hasNext = pageNum < totalPages;
             const hasPrev = pageNum > 1;
 
-            return NextResponse.json({
+            const responseData = {
                 data: cases,
                 pagination: {
                     page: pageNum,
@@ -73,7 +88,17 @@ export async function GET(request) {
                     hasNext,
                     hasPrev
                 }
-            });
+            };
+
+            // Cache the response for 5 minutes
+            try {
+                await redis.setex(cacheKey, 300, JSON.stringify(responseData));
+                console.log('💾 Cached cases API response');
+            } catch (cacheError) {
+                console.log('⚠️ Failed to cache response:', cacheError.message);
+            }
+
+            return NextResponse.json(responseData);
         }
 
         // Legacy behavior - return all cases without pagination
@@ -180,6 +205,18 @@ export async function POST(request) {
                 }
             }
         });
+
+        // Invalidate cache when new case is created
+        try {
+            const pattern = 'cases:*';
+            const keys = await redis.keys(pattern);
+            if (keys.length > 0) {
+                await redis.del(...keys);
+                console.log('🗑️ Invalidated cases cache after creating new case');
+            }
+        } catch (cacheError) {
+            console.log('⚠️ Failed to invalidate cache:', cacheError.message);
+        }
 
         return NextResponse.json(newCase, { status: 201 });
     } catch (error) {

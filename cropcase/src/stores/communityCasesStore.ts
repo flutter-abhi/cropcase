@@ -179,6 +179,9 @@ export const useCommunityCasesStore = create<CommunityCasesState>()(
 
         refresh: async () => {
             const { currentPage } = get();
+            // Clear cache to ensure fresh data
+            get().clearCache();
+            paginatedCaseService.clearCache();
             return get().fetchPage(currentPage, true);
         },
 

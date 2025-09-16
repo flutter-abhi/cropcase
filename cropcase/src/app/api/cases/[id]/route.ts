@@ -3,6 +3,7 @@ export const runtime = 'nodejs';
 
 import { NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
+import redis from "../../../../lib/redis";
 
 // GET /api/cases/[id] - Get single case by ID
 export async function GET(
@@ -11,6 +12,20 @@ export async function GET(
 ) {
     try {
         const { id: caseId } = await params;
+
+        // Build cache key for case detail
+        const cacheKey = `case:detail:${caseId}`;
+
+        // Try to get from cache first
+        try {
+            const cachedData = await redis.get(cacheKey);
+            if (cachedData) {
+                console.log('✅ Cache HIT for case detail API');
+                return NextResponse.json(JSON.parse(cachedData));
+            }
+        } catch (cacheError) {
+            console.log('⚠️ Cache error (continuing with DB):', cacheError.message);
+        }
 
         const caseData = await prisma.case.findUnique({
             where: { id: caseId },
@@ -41,6 +56,14 @@ export async function GET(
                 { error: "Case not found" },
                 { status: 404 }
             );
+        }
+
+        // Cache the response for 10 minutes (case details change less frequently)
+        try {
+            await redis.setex(cacheKey, 600, JSON.stringify(caseData));
+            console.log('💾 Cached case detail API response');
+        } catch (cacheError) {
+            console.log('⚠️ Failed to cache case detail response:', cacheError.message);
         }
 
         return NextResponse.json(caseData);
@@ -132,6 +155,14 @@ export async function PUT(
             }
         });
 
+        // Invalidate cache when case is updated
+        try {
+            await redis.del(`case:detail:${caseId}`);
+            console.log('🗑️ Invalidated case detail cache after update');
+        } catch (cacheError) {
+            console.log('⚠️ Failed to invalidate case cache:', cacheError.message);
+        }
+
         return NextResponse.json(updatedCase);
     } catch (error) {
         console.error("Error updating case:", error);
@@ -184,6 +215,14 @@ export async function DELETE(
         await prisma.case.delete({
             where: { id: caseId }
         });
+
+        // Invalidate cache when case is deleted
+        try {
+            await redis.del(`case:detail:${caseId}`);
+            console.log('🗑️ Invalidated case detail cache after deletion');
+        } catch (cacheError) {
+            console.log('⚠️ Failed to invalidate case cache:', cacheError.message);
+        }
 
         return NextResponse.json(
             { message: "Case deleted successfully" },
