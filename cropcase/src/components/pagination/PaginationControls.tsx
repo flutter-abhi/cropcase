@@ -27,8 +27,6 @@ export const PaginationControls: React.FC<PaginationControlsProps> = ({
     const {
         currentPage,
         totalPages,
-        hasNext,
-        hasPrev,
         loading,
         goToPage,
         nextPage,

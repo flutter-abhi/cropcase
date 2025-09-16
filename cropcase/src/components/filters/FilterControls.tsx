@@ -84,7 +84,7 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
                 <div className="relative">
                     <select
                         value={filters.sortBy}
-                        onChange={(e) => filters.setSortBy(e.target.value as any)}
+                        onChange={(e) => filters.setSortBy(e.target.value as 'recent' | 'popular' | 'views' | 'alphabetical')}
                         className="appearance-none bg-background border border-border rounded-lg px-4 py-2 pr-10 text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     >
                         {sortOptions.map((option) => (
@@ -221,7 +221,7 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
                                 <div className="flex flex-wrap gap-2">
                                     {filters.searchTerm && (
                                         <span className="px-2 py-1 bg-primary/10 text-primary rounded text-xs">
-                                            Search: "{filters.searchTerm}"
+                                            Search: &quot;{filters.searchTerm}&quot;
                                         </span>
                                     )}
                                     {filters.season !== 'all' && (

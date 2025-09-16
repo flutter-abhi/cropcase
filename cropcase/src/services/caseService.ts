@@ -39,64 +39,143 @@ export interface ApiCaseResponse {
     }>;
 }
 
-export const createCase = async (data: any): Promise<ApiCaseResponse> => {
-    const response = await fetch('/api/cases', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-    });
+// Input types for API operations
+export interface CreateCaseRequest {
+    userId: string;
+    name: string;
+    description?: string;
+    totalLand: number;
+    location?: string;
+    isPublic: boolean;
+    startDate?: string;
+    endDate?: string;
+    budget?: number;
+    notes?: string;
+    status: string;
+    tags?: string;
+    efficiency?: number;
+    estimatedProfit?: number;
+    crops: Array<{
+        cropId: string;
+        weight: number;
+        notes?: string;
+    }>;
+}
 
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+export interface UpdateCaseRequest {
+    name?: string;
+    description?: string;
+    totalLand?: number;
+    location?: string;
+    isPublic?: boolean;
+    startDate?: string;
+    endDate?: string;
+    budget?: number;
+    notes?: string;
+    status?: string;
+    tags?: string;
+    efficiency?: number;
+    estimatedProfit?: number;
+}
+
+export const createCase = async (data: CreateCaseRequest): Promise<ApiCaseResponse> => {
+    try {
+        const response = await fetch('/api/cases', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `Failed to create case: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new Error('An unexpected error occurred while creating the case');
     }
-
-    return response.json();
 };
 
 export const getCases = async (): Promise<ApiCaseResponse[]> => {
-    const response = await fetch('/api/cases');
+    try {
+        const response = await fetch('/api/cases');
 
-    if (!response.ok) {
-        throw new Error(`Failed to fetch cases: ${response.status}`);
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `Failed to fetch cases: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new Error('An unexpected error occurred while fetching cases');
     }
-
-    return response.json();
 };
 
 export const getCaseById = async (id: string): Promise<ApiCaseResponse> => {
-    const response = await fetch(`/api/cases/${id}`);
+    try {
+        const response = await fetch(`/api/cases/${id}`);
 
-    if (!response.ok) {
-        throw new Error(`Failed to fetch case: ${response.status}`);
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `Failed to fetch case: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new Error('An unexpected error occurred while fetching the case');
     }
-
-    return response.json();
 };
 
-export const updateCase = async (id: string, data: Partial<any>): Promise<ApiCaseResponse> => {
-    const response = await fetch(`/api/cases/${id}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data)
-    });
+export const updateCase = async (id: string, data: UpdateCaseRequest): Promise<ApiCaseResponse> => {
+    try {
+        const response = await fetch(`/api/cases/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
 
-    if (!response.ok) {
-        throw new Error(`Failed to update case: ${response.status}`);
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `Failed to update case: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new Error('An unexpected error occurred while updating the case');
     }
-
-    return response.json();
 };
 
 export const deleteCase = async (id: string): Promise<void> => {
-    const response = await fetch(`/api/cases/${id}`, {
-        method: 'DELETE',
-    });
+    try {
+        const response = await fetch(`/api/cases/${id}`, {
+            method: 'DELETE',
+        });
 
-    if (!response.ok) {
-        throw new Error(`Failed to delete case: ${response.status}`);
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `Failed to delete case: ${response.status}`);
+        }
+    } catch (error) {
+        if (error instanceof Error) {
+            throw error;
+        }
+        throw new Error('An unexpected error occurred while deleting the case');
     }
 };

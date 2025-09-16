@@ -1,4 +1,6 @@
 // API Response Types
+import { UICaseData } from './ui';
+
 export interface PaginationParams {
     page?: number;
     limit?: number;
@@ -22,7 +24,7 @@ export interface PaginatedResponse<T> {
 
 // My Cases API
 export interface MyCasesResponse {
-    cases: any[]; // Will be typed with UICaseData later
+    cases: UICaseData[];
     stats: {
         totalCases: number;
         totalLand: number;
@@ -33,7 +35,7 @@ export interface MyCasesResponse {
 
 // Community Cases API
 export interface CommunityCasesResponse {
-    cases: any[]; // Will be typed with UICaseData later
+    cases: UICaseData[];
     stats: {
         totalCommunityCases: number;
         totalFarmers: number;
@@ -54,7 +56,7 @@ export interface SearchParams extends PaginationParams {
 }
 
 export interface SearchResponse {
-    cases: any[]; // Will be typed with UICaseData later
+    cases: UICaseData[];
     filters: {
         appliedFilters: Partial<SearchParams>;
         availableSeasons: string[];
@@ -67,5 +69,5 @@ export interface SearchResponse {
 export interface ApiErrorResponse {
     error: string;
     code: string;
-    details?: any;
+    details?: unknown;
 }

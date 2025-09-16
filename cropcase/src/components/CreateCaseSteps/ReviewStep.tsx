@@ -5,7 +5,7 @@ import { Eye } from 'lucide-react';
 import { useFormStore } from '@/stores/formStore';
 
 export default function ReviewStep() {
-    const { formData, errors } = useFormStore();
+    const { formData } = useFormStore();
     return (
         <div className="space-y-6">
             <div className="text-center">

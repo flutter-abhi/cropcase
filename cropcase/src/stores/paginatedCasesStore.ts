@@ -9,6 +9,7 @@ import { PaginatedCasesState } from '@/types/pagination';
 import { paginatedCaseService } from '@/services/paginatedCaseService';
 import { transformApiCasesToUI } from '@/lib/transformers';
 import { PAGINATION_CONFIG, SORT_OPTIONS } from '@/constants/pagination';
+import { useAuthStore } from '@/stores/authStore';
 
 // Initial state
 const initialPaginationState = {
@@ -90,8 +91,13 @@ export const usePaginatedCasesStore = create<PaginatedCasesState>()(
                 }));
 
                 try {
-                    // TODO: Get current user ID from auth context
-                    const currentUserId = "dummy-user-123";
+                    // Get current user ID from auth store
+                    const authState = useAuthStore.getState();
+                    const currentUserId = authState.user?.id;
+
+                    if (!currentUserId) {
+                        throw new Error('User not authenticated');
+                    }
 
                     const response = await paginatedCaseService.fetchMyCases({
                         page,
@@ -318,7 +324,7 @@ export const usePaginatedCasesStore = create<PaginatedCasesState>()(
             },
 
             refreshAll: async () => {
-                set((state) => ({
+                set(() => ({
                     pages: {},
                     pageMetadata: {},
                     cacheTimestamps: {},
@@ -435,7 +441,7 @@ export const usePaginatedCasesStore = create<PaginatedCasesState>()(
             },
 
             clearFilters: () => {
-                set((state) => ({
+                set(() => ({
                     filters: initialFilterState,
                 }));
 
@@ -455,9 +461,12 @@ export const usePaginatedCasesStore = create<PaginatedCasesState>()(
 
             clearPage: (page: number) => {
                 set((state) => {
-                    const { [page]: _, ...remainingPages } = state.pages;
-                    const { [page]: _metadata, ...remainingMetadata } = state.pageMetadata;
-                    const { [page]: _timestamp, ...remainingTimestamps } = state.cacheTimestamps;
+                    const { [page]: removedPage, ...remainingPages } = state.pages;
+                    const { [page]: removedMetadata, ...remainingMetadata } = state.pageMetadata;
+                    const { [page]: removedTimestamp, ...remainingTimestamps } = state.cacheTimestamps;
+
+                    // Log removed items for debugging (optional)
+                    console.log(`Cleared page ${page}:`, { removedPage, removedMetadata, removedTimestamp });
 
                     return {
                         pages: remainingPages,

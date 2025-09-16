@@ -7,8 +7,10 @@ import CaseCard from "@/components/homePageComponent/CaseCard";
 import CreateCaseButton from "@/components/CreateCaseButton";
 import Link from "next/link";
 import { useCases } from "@/hooks/useCases";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Home() {
+  const { isAuthenticated } = useAuth();
   const {
     cases,
     loading,
@@ -18,10 +20,12 @@ export default function Home() {
     refreshCases
   } = useCases();
 
-  // Fetch cases on component mount
+  // Fetch cases on component mount only if authenticated
   useEffect(() => {
-    fetchCases();
-  }, [fetchCases]);
+    if (isAuthenticated) {
+      fetchCases();
+    }
+  }, [fetchCases, isAuthenticated]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -53,9 +57,26 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Create New Case Button */}
+            {/* Create New Case Button or Login CTA */}
             <div className="mt-8">
-              <CreateCaseButton variant="hero" />
+              {isAuthenticated ? (
+                <CreateCaseButton variant="hero" />
+              ) : (
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Link
+                    href="/login"
+                    className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-primary hover:bg-primary/90 transition-colors"
+                  >
+                    Sign In
+                  </Link>
+                  <Link
+                    href="/signup"
+                    className="inline-flex items-center justify-center px-6 py-3 border border-primary text-base font-medium rounded-md text-primary bg-transparent hover:bg-primary/10 transition-colors"
+                  >
+                    Get Started
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -132,78 +153,80 @@ export default function Home() {
         </div>
       </section>
 
-      {/* My Cases Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl">
-          {/* Section Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-3xl font-bold text-foreground">My Cases</h2>
-              <p className="text-muted-foreground mt-1">
-                Manage your crop portfolio • {totalStats.totalCases} cases • {totalStats.totalLandManaged} acres
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={refreshCases}
-                disabled={loading}
-                className="inline-flex items-center gap-2 px-3 py-2 border border-border rounded-lg text-sm font-medium text-foreground hover:bg-accent transition-colors disabled:opacity-50"
-              >
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
-              </button>
-              <CreateCaseButton variant="section" />
-            </div>
-          </div>
-
-          {/* Loading State */}
-          {loading && (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
-                <p className="text-muted-foreground">Loading your cases...</p>
+      {/* My Cases Section - Only show for authenticated users */}
+      {isAuthenticated && (
+        <section className="py-16 px-4 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-7xl">
+            {/* Section Header */}
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-3xl font-bold text-foreground">My Cases</h2>
+                <p className="text-muted-foreground mt-1">
+                  Manage your crop portfolio • {totalStats.totalCases} cases • {totalStats.totalLandManaged} acres
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={refreshCases}
+                  disabled={loading}
+                  className="inline-flex items-center gap-2 px-3 py-2 border border-border rounded-lg text-sm font-medium text-foreground hover:bg-accent transition-colors disabled:opacity-50"
+                >
+                  <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </button>
+                <CreateCaseButton variant="section" />
               </div>
             </div>
-          )}
 
-          {/* Error State */}
-          {error && (
-            <div className="p-4 border border-red-200 rounded-lg bg-red-50 dark:bg-red-900/10 dark:border-red-800">
-              <p className="text-red-600 dark:text-red-400">{error}</p>
-              <button
-                onClick={refreshCases}
-                className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
-              >
-                Try Again
-              </button>
-            </div>
-          )}
-
-          {/* Cases Grid */}
-          {!loading && !error && (
-            <>
-              {cases.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {cases.filter(c => c.isOwner).map((caseData) => (
-                    <CaseCard key={caseData.id} caseData={caseData} />
-                  ))}
+            {/* Loading State */}
+            {loading && (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
+                  <p className="text-muted-foreground">Loading your cases...</p>
                 </div>
-              ) : (
-                <div className="text-center py-12">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-muted rounded-full mb-4">
-                    <Sprout className="h-8 w-8 text-muted-foreground" />
+              </div>
+            )}
+
+            {/* Error State */}
+            {error && (
+              <div className="p-4 border border-red-200 rounded-lg bg-red-50 dark:bg-red-900/10 dark:border-red-800">
+                <p className="text-red-600 dark:text-red-400">{error}</p>
+                <button
+                  onClick={refreshCases}
+                  className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+                >
+                  Try Again
+                </button>
+              </div>
+            )}
+
+            {/* Cases Grid */}
+            {!loading && !error && (
+              <>
+                {cases.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {cases.filter(c => c.isOwner).map((caseData) => (
+                      <CaseCard key={caseData.id} caseData={caseData} />
+                    ))}
                   </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">No cases yet</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Create your first crop case to get started with portfolio management
-                  </p>
-                  <CreateCaseButton variant="section" />
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      </section>
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-muted rounded-full mb-4">
+                      <Sprout className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">No cases yet</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Create your first crop case to get started with portfolio management
+                    </p>
+                    <CreateCaseButton variant="section" />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Community Cases Section */}
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-muted/30">
@@ -224,30 +247,56 @@ export default function Home() {
           </div>
 
           {/* Community Cases Grid */}
-          {!loading && !error && (
-            <>
-              {cases.filter(c => !c.isOwner).length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {cases.filter(c => !c.isOwner).slice(0, 3).map((caseData) => (
-                    <CaseCard
-                      key={caseData.id}
-                      caseData={caseData}
-                      isCommunity={true}
-                    />
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <div className="inline-flex items-center justify-center w-16 h-16 bg-background rounded-full mb-4">
-                    <Users className="h-8 w-8 text-muted-foreground" />
+          {isAuthenticated ? (
+            !loading && !error && (
+              <>
+                {cases.filter(c => !c.isOwner).length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {cases.filter(c => !c.isOwner).slice(0, 3).map((caseData) => (
+                      <CaseCard
+                        key={caseData.id}
+                        caseData={caseData}
+                        isCommunity={true}
+                      />
+                    ))}
                   </div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">No community cases yet</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Be the first to share your farming knowledge with the community
-                  </p>
-                </div>
-              )}
-            </>
+                ) : (
+                  <div className="text-center py-12">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-background rounded-full mb-4">
+                      <Users className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">No community cases yet</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Be the first to share your farming knowledge with the community
+                    </p>
+                  </div>
+                )}
+              </>
+            )
+          ) : (
+            <div className="text-center py-12">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-background rounded-full mb-4">
+                <Users className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">Join the Community</h3>
+              <p className="text-muted-foreground mb-4">
+                Sign in to explore community cases and share your farming knowledge
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link
+                  href="/login"
+                  className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 transition-colors"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/signup"
+                  className="inline-flex items-center justify-center px-4 py-2 border border-primary text-sm font-medium rounded-md text-primary bg-transparent hover:bg-primary/10 transition-colors"
+                >
+                  Get Started
+                </Link>
+              </div>
+            </div>
           )}
         </div>
       </section>

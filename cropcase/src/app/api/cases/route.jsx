@@ -9,18 +9,19 @@ export async function GET(request) {
         // Check if pagination parameters are provided
         const page = searchParams.get('page');
         const limit = searchParams.get('limit');
-        const userId = searchParams.get('userId');
+        const filterUserId = searchParams.get('userId'); // For filtering specific user's cases
+        const authenticatedUserId = request.headers.get('x-user-id'); // Current authenticated user
 
         // If pagination parameters are provided, use new paginated response
-        if (page || limit || userId) {
+        if (page || limit || filterUserId) {
             const pageNum = parseInt(page || '1');
             const limitNum = Math.min(parseInt(limit || '10'), 50);
             const offset = (pageNum - 1) * limitNum;
 
             // Build where clause
             const whereClause = {};
-            if (userId) {
-                whereClause.userId = userId;
+            if (filterUserId) {
+                whereClause.userId = filterUserId;
             }
 
             const [cases, totalCount] = await Promise.all([
@@ -117,10 +118,20 @@ export async function POST(request) {
     try {
         const body = await request.json();
 
-        // Validate required fields
-        if (!body.name || !body.userId || !body.totalLand) {
+        // Get authenticated user ID from middleware
+        const userId = request.headers.get('x-user-id');
+
+        if (!userId) {
             return NextResponse.json(
-                { error: "Missing required fields: name, userId, totalLand" },
+                { error: "Authentication required" },
+                { status: 401 }
+            );
+        }
+
+        // Validate required fields
+        if (!body.name || !body.totalLand) {
+            return NextResponse.json(
+                { error: "Missing required fields: name, totalLand" },
                 { status: 400 }
             );
         }
@@ -128,7 +139,7 @@ export async function POST(request) {
         // Create case with crops
         const newCase = await prisma.case.create({
             data: {
-                userId: body.userId,
+                userId: userId,
                 name: body.name,
                 description: body.description || null,
                 totalLand: parseFloat(body.totalLand),

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { PaginationParams, MyCasesResponse, ApiErrorResponse } from '@/types/api';
+import { MyCasesResponse, ApiErrorResponse } from '@/types/api';
+import { UICaseData } from '@/types/ui';
 
 export async function GET(request: NextRequest) {
     try {
@@ -33,8 +34,8 @@ export async function GET(request: NextRequest) {
         const offset = (page - 1) * limit;
 
         // Build sort order
-        const orderBy: any = {};
-        orderBy[sortBy] = sortOrder;
+        const orderBy: Record<string, 'asc' | 'desc'> = {};
+        orderBy[sortBy] = sortOrder as 'asc' | 'desc';
 
         // Fetch user's cases with pagination
         const [cases, totalCount] = await Promise.all([
@@ -95,12 +96,12 @@ export async function GET(request: NextRequest) {
                 season: cropCase.crop.season,
                 notes: cropCase.notes
             })),
-            likes: case_.likes?.length || 0,
+            likes: (case_ as { likes?: unknown[] }).likes?.length || 0,
             views: case_.views || 0
         }));
 
         const response: MyCasesResponse = {
-            cases: transformedCases,
+            cases: transformedCases as unknown as UICaseData[],
             stats: {
                 totalCases: totalCount,
                 totalLand,

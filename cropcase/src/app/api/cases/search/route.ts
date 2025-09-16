@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { SearchParams, SearchResponse, ApiErrorResponse } from '@/types/api';
+import { SearchResponse, ApiErrorResponse } from '@/types/api';
+import { UICaseData } from '@/types/ui';
 
 export async function GET(request: NextRequest) {
     try {
@@ -32,7 +33,14 @@ export async function GET(request: NextRequest) {
         const offset = (page - 1) * limit;
 
         // Build where clause - simplified version
-        const whereClause: any = {
+        interface WhereClause {
+            isPublic: boolean;
+            userId?: { not: string };
+            name?: { contains: string; mode: 'insensitive' };
+            totalLand?: { gte?: number; lte?: number };
+        }
+
+        const whereClause: WhereClause = {
             isPublic: true // Only search public cases
         };
 
@@ -61,8 +69,8 @@ export async function GET(request: NextRequest) {
         }
 
         // Build sort order
-        const orderBy: any = {};
-        orderBy[sortBy] = sortOrder;
+        const orderBy: Record<string, 'asc' | 'desc'> = {};
+        orderBy[sortBy] = sortOrder as 'asc' | 'desc';
 
         // Debug logging (remove in production)
         // console.log('Search whereClause:', JSON.stringify(whereClause, null, 2));
@@ -148,7 +156,7 @@ export async function GET(request: NextRequest) {
         const uniqueTags = [...new Set(allTags)].sort();
 
         const response: SearchResponse = {
-            cases: transformedCases,
+            cases: transformedCases as unknown as UICaseData[],
             filters: {
                 appliedFilters: {
                     q: q || undefined,

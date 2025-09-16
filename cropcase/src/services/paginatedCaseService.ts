@@ -13,6 +13,7 @@ import {
 } from '@/types/pagination';
 import { ApiCaseResponse } from '@/services/caseService';
 import { PAGINATION_CONFIG, CACHE_KEYS, PAGINATION_ERRORS } from '@/constants/pagination';
+import { useAuthStore } from '@/stores/authStore';
 
 // Cache management class
 class CacheManager<T> {
@@ -318,6 +319,14 @@ export class PaginatedCaseService {
             let requestUrl = url;
             const requestInit: RequestInit = { method };
 
+            // Add authentication headers
+            const authState = useAuthStore.getState();
+            const headers: Record<string, string> = {};
+
+            if (authState.accessToken) {
+                headers['Authorization'] = `Bearer ${authState.accessToken}`;
+            }
+
             if (method === 'GET' && Object.keys(params).length > 0) {
                 const searchParams = new URLSearchParams();
                 Object.entries(params).forEach(([key, value]) => {
@@ -327,10 +336,11 @@ export class PaginatedCaseService {
                 });
                 requestUrl += `?${searchParams.toString()}`;
             } else if (method === 'POST') {
-                requestInit.headers = { 'Content-Type': 'application/json' };
+                headers['Content-Type'] = 'application/json';
                 requestInit.body = JSON.stringify(params);
             }
 
+            requestInit.headers = headers;
             const response = await fetch(requestUrl, requestInit);
 
             if (!response.ok) {

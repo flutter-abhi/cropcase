@@ -7,9 +7,10 @@ import CropSelectionStep from './CreateCaseSteps/CropSelectionStep';
 import SettingsStep from './CreateCaseSteps/SettingsStep';
 import ReviewStep from './CreateCaseSteps/ReviewStep';
 import { useFormStore } from '@/stores/formStore';
-import { createCase } from '@/services/caseService';
 import { UICaseData } from '@/types/ui';
 import { transformApiCaseToUI } from '@/lib/transformers';
+import { useApi } from '@/hooks/useApi';
+import { useAuth } from '@/hooks/useAuth';
 
 interface CreateCaseModalProps {
     isOpen: boolean;
@@ -20,6 +21,8 @@ interface CreateCaseModalProps {
 
 
 export default function CreateCaseModal({ isOpen, onClose, onSubmit }: CreateCaseModalProps) {
+    const { post } = useApi();
+    const { user } = useAuth();
     const {
         formData,
         currentStep,
@@ -113,10 +116,10 @@ export default function CreateCaseModal({ isOpen, onClose, onSubmit }: CreateCas
                 };
 
                 // Call API to create case
-                const createdCase = await createCase(apiData);
+                const createdCase = await post('/api/cases', apiData);
 
                 // Transform API response directly to UI format
-                const currentUserId = "dummy-user-123"; // TODO: Get from auth context
+                const currentUserId = user?.id || '';
                 const caseData = transformApiCaseToUI(createdCase, currentUserId);
 
                 // Call the onSubmit callback with the created case data

@@ -7,7 +7,7 @@ import CropSelectionForm from './CropSelectionForm';
 import { useFormStore } from '@/stores/formStore';
 
 export default function CropSelectionStep() {
-    const { availableCrops, cropsLoading, setAvailableCrops, setCropsLoading } = useFormStore();
+    const { availableCrops, setAvailableCrops, setCropsLoading } = useFormStore();
     const [crops, setCrops] = useState<Crop[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);

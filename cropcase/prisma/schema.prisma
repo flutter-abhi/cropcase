@@ -21,7 +21,7 @@ model User {
   id        String   @id @default(uuid())
   email     String   @unique
   name      String?
-  password  String   // Hashed password
+  password  String?  // Hashed password (optional for migration)
   avatar    String?  // Profile picture URL
   role      UserRole @default(USER)
   isVerified Boolean @default(false)

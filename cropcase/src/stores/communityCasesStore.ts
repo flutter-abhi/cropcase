@@ -8,7 +8,8 @@ import { devtools } from 'zustand/middleware';
 import { UICaseData } from '@/types/ui';
 import { paginatedCaseService } from '@/services/paginatedCaseService';
 import { transformApiCasesToUI } from '@/lib/transformers';
-import { PAGINATION_CONFIG, SORT_OPTIONS } from '@/constants/pagination';
+import { PAGINATION_CONFIG } from '@/constants/pagination';
+import { useAuthStore } from '@/stores/authStore';
 
 interface CommunityCasesState {
     // Data management
@@ -94,7 +95,13 @@ export const useCommunityCasesStore = create<CommunityCasesState>()(
             });
 
             try {
-                const currentUserId = "dummy-user-123";
+                // Get current user ID from auth store
+                const authState = useAuthStore.getState();
+                const currentUserId = authState.user?.id;
+
+                if (!currentUserId) {
+                    throw new Error('User not authenticated');
+                }
 
                 console.log(`🏘️ Community Store: Calling API for page ${page}`);
                 const response = await paginatedCaseService.fetchCommunityCases({

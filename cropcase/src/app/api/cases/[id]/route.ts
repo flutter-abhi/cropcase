@@ -1,13 +1,16 @@
+// Force Node.js runtime for JWT support
+export const runtime = 'nodejs';
+
 import { NextResponse } from "next/server";
 import { prisma } from "../../../../lib/prisma";
 
 // GET /api/cases/[id] - Get single case by ID
 export async function GET(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const caseId = params.id;
+        const { id: caseId } = await params;
 
         const caseData = await prisma.case.findUnique({
             where: { id: caseId },
@@ -53,13 +56,23 @@ export async function GET(
 // PUT /api/cases/[id] - Update case by ID
 export async function PUT(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const caseId = params.id;
+        const { id: caseId } = await params;
         const body = await request.json();
 
-        // Check if case exists
+        // Get authenticated user ID from middleware
+        const userId = request.headers.get('x-user-id');
+
+        if (!userId) {
+            return NextResponse.json(
+                { error: "Authentication required" },
+                { status: 401 }
+            );
+        }
+
+        // Check if case exists and user owns it
         const existingCase = await prisma.case.findUnique({
             where: { id: caseId }
         });
@@ -68,6 +81,14 @@ export async function PUT(
             return NextResponse.json(
                 { error: "Case not found" },
                 { status: 404 }
+            );
+        }
+
+        // Check ownership
+        if (existingCase.userId !== userId) {
+            return NextResponse.json(
+                { error: "You can only update your own cases" },
+                { status: 403 }
             );
         }
 
@@ -124,12 +145,22 @@ export async function PUT(
 // DELETE /api/cases/[id] - Delete case by ID
 export async function DELETE(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const caseId = params.id;
+        const { id: caseId } = await params;
 
-        // Check if case exists
+        // Get authenticated user ID from middleware
+        const userId = request.headers.get('x-user-id');
+
+        if (!userId) {
+            return NextResponse.json(
+                { error: "Authentication required" },
+                { status: 401 }
+            );
+        }
+
+        // Check if case exists and user owns it
         const existingCase = await prisma.case.findUnique({
             where: { id: caseId }
         });
@@ -138,6 +169,14 @@ export async function DELETE(
             return NextResponse.json(
                 { error: "Case not found" },
                 { status: 404 }
+            );
+        }
+
+        // Check ownership
+        if (existingCase.userId !== userId) {
+            return NextResponse.json(
+                { error: "You can only delete your own cases" },
+                { status: 403 }
             );
         }
 

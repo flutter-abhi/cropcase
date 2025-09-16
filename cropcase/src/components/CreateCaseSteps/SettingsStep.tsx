@@ -4,7 +4,7 @@ import { DollarSign, Tag, X } from 'lucide-react';
 import { useFormStore } from '@/stores/formStore';
 
 export default function SettingsStep() {
-    const { formData, updateField, errors } = useFormStore();
+    const { formData, updateField } = useFormStore();
     const [newTag, setNewTag] = useState('');
 
     const addTag = () => {
