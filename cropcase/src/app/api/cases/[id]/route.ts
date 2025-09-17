@@ -131,7 +131,9 @@ export async function PUT(
             efficiency: number | null;
             estimatedProfit: number | null;
             crops?: {
-                deleteMany: {};
+                deleteMany: {
+                    caseId: string;
+                };
                 create: Array<{
                     cropId: string;
                     weight: number;
@@ -157,10 +159,12 @@ export async function PUT(
         // Handle crops update if provided
         if (body.crops && Array.isArray(body.crops)) {
             updateData.crops = {
-                deleteMany: {}, // Delete all existing crops
+                deleteMany: {
+                    caseId: caseId
+                }, // Delete all existing crops for this case
                 create: body.crops.map((crop: { cropId: string; weight: string | number; notes?: string }) => ({
                     cropId: crop.cropId,
-                    weight: parseInt(crop.weight),
+                    weight: parseInt(crop.weight.toString()),
                     notes: crop.notes || null,
                 }))
             };
