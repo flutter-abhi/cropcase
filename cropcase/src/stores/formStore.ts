@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { FormData } from '@/types/form';
 import { Crop } from '@/types/crop';
 import { UICaseData } from '@/types/ui';
+import { AICropSuggestion } from '@/hooks/useAICropSuggestions';
 
 // Extended interface for edit data that includes all possible fields
 interface ExtendedCaseData extends Omit<UICaseData, 'crops'> {
@@ -31,6 +32,11 @@ interface FormState {
     availableCrops: Crop[];
     cropsLoading: boolean;
 
+    // AI suggestions state
+    aiSuggestions: AICropSuggestion[];
+    aiLoading: boolean;
+    aiError: string | null;
+
     // Actions
     setFormData: (data: Partial<FormData>) => void;
     updateField: <K extends keyof FormData>(field: K, value: FormData[K]) => void;
@@ -45,6 +51,13 @@ interface FormState {
     nextStep: () => void;
     prevStep: () => void;
     populateFormForEdit: (caseData: ExtendedCaseData) => void;
+
+    // AI suggestions actions
+    setAISuggestions: (suggestions: AICropSuggestion[]) => void;
+    setAILoading: (loading: boolean) => void;
+    setAIError: (error: string | null) => void;
+    addAISuggestionToCrops: (suggestion: AICropSuggestion) => void;
+    clearAISuggestions: () => void;
 }
 
 // Initial form data
@@ -70,6 +83,11 @@ export const useFormStore = create<FormState>((set, get) => ({
     isSubmitting: false,
     availableCrops: [],
     cropsLoading: false,
+
+    // AI suggestions initial state
+    aiSuggestions: [],
+    aiLoading: false,
+    aiError: null,
 
     // Actions
     setFormData: (data) =>
@@ -111,6 +129,9 @@ export const useFormStore = create<FormState>((set, get) => ({
         isSubmitting: false,
         availableCrops: [],
         cropsLoading: false,
+        aiSuggestions: [],
+        aiLoading: false,
+        aiError: null,
     }),
 
     nextStep: () => {
@@ -154,4 +175,44 @@ export const useFormStore = create<FormState>((set, get) => ({
             isSubmitting: false
         });
     },
+
+    // AI suggestions actions
+    setAISuggestions: (suggestions) => set({ aiSuggestions: suggestions }),
+
+    setAILoading: (loading) => set({ aiLoading: loading }),
+
+    setAIError: (error) => set({ aiError: error }),
+
+    addAISuggestionToCrops: (suggestion) => {
+        const { formData, updateField } = get();
+
+        // Check if crop already exists
+        const existingCropIndex = formData.crops.findIndex(
+            crop => crop.id === suggestion.cropId || crop.name === suggestion.cropName
+        );
+
+        if (existingCropIndex >= 0) {
+            // Update existing crop weight
+            const updatedCrops = [...formData.crops];
+            updatedCrops[existingCropIndex] = {
+                ...updatedCrops[existingCropIndex],
+                weight: suggestion.suggestedWeight
+            };
+            updateField('crops', updatedCrops);
+        } else {
+            // Add new crop
+            const newCrop = {
+                id: suggestion.cropId,
+                name: suggestion.cropName,
+                weight: suggestion.suggestedWeight,
+                season: "Summer" // Default season, will be updated from crop data
+            };
+            updateField('crops', [...formData.crops, newCrop]);
+        }
+    },
+
+    clearAISuggestions: () => set({
+        aiSuggestions: [],
+        aiError: null
+    }),
 }));

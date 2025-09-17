@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { API_ENDPOINTS } from '@/constants';
 import { Crop } from '@/types/crop';
 import CropSelectionForm from './CropSelectionForm';
+import AICropSuggestionsForm from './AICropSuggestionsForm';
 import { useFormStore } from '@/stores/formStore';
 
 export default function CropSelectionStep() {
@@ -74,8 +75,20 @@ export default function CropSelectionStep() {
     }
 
     return (
-        <CropSelectionForm
-            availableCrops={crops}
-        />
+        <div className="space-y-8">
+
+            {/* Manual Crop Selection Section */}
+            <div className="border-t border-border pt-6">
+                <CropSelectionForm
+                    availableCrops={crops}
+                />
+            </div>
+
+            {/* AI Crop Suggestions Section */}
+            <AICropSuggestionsForm
+                availableCrops={crops}
+            />
+
+        </div>
     );
 }
