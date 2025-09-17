@@ -24,5 +24,6 @@ export interface UICaseData {
     tags?: string[];
     efficiency?: number;
     estimatedProfit?: number;
+    budget?: number;
     status?: string;
 }

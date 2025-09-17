@@ -23,7 +23,11 @@ export const transformCropCaseToUI = (cropCase: CropCase): UICaseData => {
         views: cropCase.views,
         location: cropCase.location || undefined,
         description: cropCase.description || undefined,
-        tags: cropCase.tags ? cropCase.tags.split(',').filter(tag => tag.trim()) : []
+        tags: cropCase.tags ? cropCase.tags.split(',').filter(tag => tag.trim()) : [],
+        efficiency: cropCase.efficiency || undefined,
+        estimatedProfit: cropCase.estimatedProfit || undefined,
+        budget: cropCase.budget || undefined,
+        status: cropCase.status || undefined
     };
 };
 
@@ -50,7 +54,11 @@ export const transformApiCaseToUI = (apiCase: ApiCaseResponse, currentUserId?: s
         views: apiCase.views,
         location: apiCase.location || undefined,
         description: apiCase.description || undefined,
-        tags: apiCase.tags ? apiCase.tags.split(',').filter(tag => tag.trim()) : []
+        tags: apiCase.tags ? apiCase.tags.split(',').filter(tag => tag.trim()) : [],
+        efficiency: apiCase.efficiency || undefined,
+        estimatedProfit: apiCase.estimatedProfit || undefined,
+        budget: apiCase.budget || undefined,
+        status: apiCase.status || undefined
     };
 };
 

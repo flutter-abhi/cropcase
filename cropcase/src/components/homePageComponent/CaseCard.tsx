@@ -16,6 +16,7 @@ import { CaseActionsMenu, MenuButton } from '@/components/CaseActionsMenu';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { ShareModal } from '@/components/ShareModal';
 import CreateCaseModal from '@/components/CreateCaseModal';
+import CaseDetailsModal from '@/components/CaseDetailsModal';
 import { useToast } from '@/components/Toast';
 import { useApi } from '@/hooks/useApi';
 
@@ -36,6 +37,7 @@ export default function CaseCard({ caseData, isCommunity = false, onCaseDeleted,
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showDetailsModal, setShowDetailsModal] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const { showToast } = useToast();
     const { del } = useApi();
@@ -73,6 +75,10 @@ export default function CaseCard({ caseData, isCommunity = false, onCaseDeleted,
     const handleShare = () => {
         setShowShareModal(true);
         handleMenuClose();
+    };
+
+    const handleViewDetails = () => {
+        setShowDetailsModal(true);
     };
 
     const handleDeleteConfirm = async () => {
@@ -113,20 +119,6 @@ export default function CaseCard({ caseData, isCommunity = false, onCaseDeleted,
         }
     };
 
-    const getSeasonColor = (season: string) => {
-        switch (season.toLowerCase()) {
-            case 'spring':
-                return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
-            case 'summer':
-                return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
-            case 'fall':
-                return 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400';
-            case 'winter':
-                return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
-            default:
-                return 'bg-muted text-muted-foreground';
-        }
-    };
 
     const formatDate = (date: Date) => {
         return new Intl.DateTimeFormat('en-US', {
@@ -136,8 +128,38 @@ export default function CaseCard({ caseData, isCommunity = false, onCaseDeleted,
         }).format(date);
     };
 
-    const topCrop = crops.length > 0 ? crops.reduce((max, crop) => crop.weight > max.weight ? crop : max, crops[0]) : null;
-    const profitEstimate = Math.round(totalLand * 1500 + (totalLand * 100));
+    // Calculate smart defaults for missing data
+    const calculateEfficiency = () => {
+        if (caseData.efficiency !== null && caseData.efficiency !== undefined) {
+            return caseData.efficiency;
+        }
+        // Smart calculation based on crop diversity and land size
+        const cropDiversity = crops.length;
+        const baseEfficiency = Math.min(95, 60 + (cropDiversity * 8) + (totalLand > 10 ? 10 : 0));
+        return Math.round(baseEfficiency);
+    };
+
+    const calculateEstimatedProfit = () => {
+        if (caseData.estimatedProfit !== null && caseData.estimatedProfit !== undefined) {
+            return caseData.estimatedProfit;
+        }
+        // Smart calculation based on land size and crop types
+        const baseProfit = totalLand * 1200; // Base $1200 per acre
+        const cropMultiplier = crops.length > 0 ? 1 + (crops.length * 0.1) : 1;
+        return Math.round(baseProfit * cropMultiplier);
+    };
+
+    const calculateBudget = () => {
+        if (caseData.budget !== null && caseData.budget !== undefined) {
+            return caseData.budget;
+        }
+        // Smart calculation based on land size
+        return Math.round(totalLand * 800); // Base $800 per acre
+    };
+
+    const efficiency = calculateEfficiency();
+    const estimatedProfit = calculateEstimatedProfit();
+    const budget = calculateBudget();
 
     return (
         <div className="group bg-card border border-border rounded-lg hover:shadow-lg transition-all duration-200 hover:border-primary/50 h-full flex flex-col relative">
@@ -149,18 +171,18 @@ export default function CaseCard({ caseData, isCommunity = false, onCaseDeleted,
                         <button
                             onClick={toggleLike}
                             disabled={isLoading}
-                            className={`absolute top-4 right-4 z-10 p-2 rounded-full transition-colors disabled:opacity-50 ${isLiked
+                            className={`absolute top-3 right-3 z-10 p-1.5 rounded-full transition-colors disabled:opacity-50 ${isLiked
                                 ? 'text-red-500 bg-red-50 dark:bg-red-900/20'
                                 : 'text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'
                                 }`}
                         >
-                            <Heart className={`h-4 w-4 ${isLiked ? 'fill-current' : ''}`} />
+                            <Heart className={`h-3.5 w-3.5 ${isLiked ? 'fill-current' : ''}`} />
                         </button>
                     )}
 
                     {/* Actions Menu Button - Only show for owner */}
                     {isOwner && (
-                        <div className="absolute top-4 right-4 z-10">
+                        <div className="absolute top-3 right-3 z-10">
                             <MenuButton
                                 onClick={handleMenuToggle}
                                 isOpen={isMenuOpen}
@@ -178,42 +200,19 @@ export default function CaseCard({ caseData, isCommunity = false, onCaseDeleted,
 
                     {/* Community Stats */}
                     {(likeCount !== undefined || views !== undefined) && (
-                        <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
+                        <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5">
                             {likeCount !== undefined && (
-                                <div className="flex items-center gap-1 px-2 py-1 bg-background/80 backdrop-blur-sm rounded-full text-xs text-muted-foreground">
-                                    <Heart className="h-3 w-3" />
+                                <div className="flex items-center gap-1 px-1.5 py-1 bg-background/90 backdrop-blur-sm rounded-full text-xs text-muted-foreground">
+                                    <Heart className="h-2.5 w-2.5" />
                                     {likeCount}
                                 </div>
                             )}
                             {views !== undefined && (
-                                <div className="flex items-center gap-1 px-2 py-1 bg-background/80 backdrop-blur-sm rounded-full text-xs text-muted-foreground">
-                                    <TrendingUp className="h-3 w-3" />
+                                <div className="flex items-center gap-1 px-1.5 py-1 bg-background/90 backdrop-blur-sm rounded-full text-xs text-muted-foreground">
+                                    <TrendingUp className="h-2.5 w-2.5" />
                                     {views}
                                 </div>
                             )}
-                        </div>
-                    )}
-
-                    {/* Location Badge */}
-                    {location && (
-                        <div className="absolute top-16 left-4 z-10">
-                            <div className="flex items-center gap-1 px-2 py-1 bg-background/80 backdrop-blur-sm rounded-full text-xs text-muted-foreground">
-                                <MapPin className="h-3 w-3" />
-                                {location}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Tags */}
-                    {tags && tags.length > 0 && (
-                        <div className="absolute bottom-20 left-4 right-4 z-10">
-                            <div className="flex flex-wrap gap-1">
-                                {tags.slice(0, 3).map((tag, index) => (
-                                    <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/90 text-primary-foreground">
-                                        {tag}
-                                    </span>
-                                ))}
-                            </div>
                         </div>
                     )}
                 </>
@@ -237,18 +236,24 @@ export default function CaseCard({ caseData, isCommunity = false, onCaseDeleted,
                 </div>
             )}
 
-            <div className="p-6 flex-1 flex flex-col">
+            <div className={`p-6 flex-1 flex flex-col ${isCommunity ? 'pt-16' : 'pt-6'}`}>
+                {/* Header */}
                 <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
+                    <div className="flex-1 pr-16">
                         <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">
                             {name}
                         </h3>
                         <div className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
                             <MapPin className="h-3 w-3" />
                             {totalLand} acres
+                            {location && (
+                                <>
+                                    <span>•</span>
+                                    <span>{location}</span>
+                                </>
+                            )}
                         </div>
                     </div>
-
                 </div>
 
                 {/* Description for Community Cases */}
@@ -258,71 +263,61 @@ export default function CaseCard({ caseData, isCommunity = false, onCaseDeleted,
                     </p>
                 )}
 
-                <div className="space-y-4 flex-1">
-                    {/* Crop Allocation */}
-                    <div>
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium text-foreground">
-                                Crop Allocation
-                            </span>
-                            {topCrop && (
-                                <span className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${getSeasonColor(topCrop.season)}`}>
-                                    {topCrop.season}
-                                </span>
-                            )}
+                {/* Stats Grid */}
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                    <div className="text-center p-3 bg-muted/50 rounded-lg">
+                        <div className="flex items-center justify-center gap-1 mb-1">
+                            <PieChart className="h-3 w-3 text-primary" />
+                            <span className="text-xs text-muted-foreground">Efficiency</span>
                         </div>
-
-                        <div className="space-y-2">
-                            {crops.length > 0 ? (
-                                <>
-                                    {crops.slice(0, 3).map((crop, index) => (
-                                        <div key={index} className="flex items-center justify-between text-sm">
-                                            <span className="text-muted-foreground">{crop.name}</span>
-                                            <span className="font-medium text-foreground">{crop.weight}%</span>
-                                        </div>
-                                    ))}
-                                    {crops.length > 3 && (
-                                        <div className="text-sm text-muted-foreground">
-                                            +{crops.length - 3} more crops
-                                        </div>
-                                    )}
-                                </>
-                            ) : (
-                                <div className="text-sm text-muted-foreground text-center py-2">
-                                    No crops added yet
-                                </div>
-                            )}
+                        <div className="font-semibold text-sm text-foreground">{efficiency}%</div>
+                    </div>
+                    <div className="text-center p-3 bg-muted/50 rounded-lg">
+                        <div className="flex items-center justify-center gap-1 mb-1">
+                            <TrendingUp className="h-3 w-3 text-green-600 dark:text-green-400" />
+                            <span className="text-xs text-muted-foreground">Est. Profit</span>
+                        </div>
+                        <div className="font-semibold text-sm text-foreground">
+                            ${estimatedProfit.toLocaleString()}
                         </div>
                     </div>
-
-                    {/* Progress Bar */}
-                    <div className="w-full bg-muted rounded-full h-2">
-                        <div
-                            className="bg-gradient-to-r from-primary to-primary/80 h-2 rounded-full transition-all duration-500"
-                            style={{ width: '85%' }}
-                        />
-                    </div>
-
-                    {/* Stats */}
-                    <div className="grid grid-cols-2 gap-4 pt-2">
-                        <div className="text-center">
-                            <div className="flex items-center justify-center gap-1 mb-1">
-                                <PieChart className="h-3 w-3 text-primary" />
-                                <span className="text-xs text-muted-foreground">Efficiency</span>
-                            </div>
-                            <div className="font-semibold text-sm text-foreground">85%</div>
+                    <div className="text-center p-3 bg-muted/50 rounded-lg">
+                        <div className="flex items-center justify-center gap-1 mb-1">
+                            <span className="text-xs text-muted-foreground">Budget</span>
                         </div>
-                        <div className="text-center">
-                            <div className="flex items-center justify-center gap-1 mb-1">
-                                <TrendingUp className="h-3 w-3 text-blue-600 dark:text-blue-400" />
-                                <span className="text-xs text-muted-foreground">Est. Profit</span>
-                            </div>
-                            <div className="font-semibold text-sm text-foreground">
-                                ${profitEstimate.toLocaleString()}
-                            </div>
+                        <div className="font-semibold text-sm text-foreground">
+                            ${budget.toLocaleString()}
                         </div>
                     </div>
                 </div>
+
+                {/* Crop Count */}
+                <div className="mb-4">
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-foreground">Crops</span>
+                        <span className="text-sm text-muted-foreground">
+                            {crops.length} {crops.length === 1 ? 'crop' : 'crops'}
+                        </span>
+                    </div>
+                </div>
+
+                {/* Tags for Community Cases */}
+                {isCommunity && tags && tags.length > 0 && (
+                    <div className="mb-4">
+                        <div className="flex flex-wrap gap-1">
+                            {tags.slice(0, 3).map((tag, index) => (
+                                <span key={index} className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-primary/90 text-primary-foreground">
+                                    {tag}
+                                </span>
+                            ))}
+                            {tags.length > 3 && (
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground">
+                                    +{tags.length - 3} more
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                )}
 
                 {/* Footer - Fixed at bottom */}
                 <div className="mt-auto pt-4">
@@ -353,7 +348,10 @@ export default function CaseCard({ caseData, isCommunity = false, onCaseDeleted,
                     </div>
 
                     {/* Action Button - Fixed at bottom */}
-                    <button className="w-full px-4 py-2 border border-border rounded-md text-sm font-medium text-foreground hover:bg-accent hover:border-primary/50 transition-colors flex items-center justify-center gap-2">
+                    <button
+                        onClick={handleViewDetails}
+                        className="w-full px-4 py-2 border border-border rounded-md text-sm font-medium text-foreground hover:bg-accent hover:border-primary/50 transition-colors flex items-center justify-center gap-2"
+                    >
                         <Eye className="h-4 w-4" />
                         View Details
                     </button>
@@ -381,6 +379,12 @@ export default function CaseCard({ caseData, isCommunity = false, onCaseDeleted,
                 onSubmit={handleEditSubmit}
                 editData={caseData}
                 mode="edit"
+            />
+
+            <CaseDetailsModal
+                isOpen={showDetailsModal}
+                onClose={() => setShowDetailsModal(false)}
+                caseData={caseData}
             />
         </div>
     );
