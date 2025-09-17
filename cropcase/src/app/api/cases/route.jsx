@@ -208,11 +208,20 @@ export async function POST(request) {
 
         // Invalidate cache when new case is created
         try {
+            // Invalidate general cases cache
             const pattern = 'cases:*';
             const keys = await redis.keys(pattern);
             if (keys.length > 0) {
                 await redis.del(...keys);
                 console.log('🗑️ Invalidated cases cache after creating new case');
+            }
+
+            // Invalidate my-cases cache for this user (all pages and sort options)
+            const myCasesPattern = `my-cases:user:${userId}:*`;
+            const myCasesKeys = await redis.keys(myCasesPattern);
+            if (myCasesKeys.length > 0) {
+                await redis.del(...myCasesKeys);
+                console.log(`🗑️ Invalidated ${myCasesKeys.length} my-cases cache entries for user ${userId}`);
             }
         } catch (cacheError) {
             console.log('⚠️ Failed to invalidate cache:', cacheError.message);

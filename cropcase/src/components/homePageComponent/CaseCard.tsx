@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-    MoreHorizontal,
     Eye,
     MapPin,
     Calendar,
@@ -13,16 +12,33 @@ import {
 } from 'lucide-react';
 import { UICaseData } from '@/types/ui';
 import { useLike } from '@/hooks/useLike';
+import { CaseActionsMenu, MenuButton } from '@/components/CaseActionsMenu';
+import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
+import { ShareModal } from '@/components/ShareModal';
+import CreateCaseModal from '@/components/CreateCaseModal';
+import { useToast } from '@/components/Toast';
+import { useApi } from '@/hooks/useApi';
 
 interface CaseCardProps {
     caseData: UICaseData;
     // Community mode props (optional)
     isCommunity?: boolean;
+    // Callback when case is deleted
+    onCaseDeleted?: (caseId: string) => void;
+    // Callback when case is updated
+    onCaseUpdated?: (caseData: UICaseData) => void;
 }
 
-export default function CaseCard({ caseData, isCommunity = false }: CaseCardProps) {
+export default function CaseCard({ caseData, isCommunity = false, onCaseDeleted, onCaseUpdated }: CaseCardProps) {
     const { name, crops, user, createdAt, totalLand, isOwner, likes, isLiked: initialIsLiked, views, location, description, tags, id } = caseData;
     const [mounted, setMounted] = useState(false);
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showShareModal, setShowShareModal] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const { showToast } = useToast();
+    const { del } = useApi();
 
     // Use like functionality for community cases
     const { isLiked, likeCount, isLoading, toggleLike } = useLike({
@@ -34,6 +50,68 @@ export default function CaseCard({ caseData, isCommunity = false }: CaseCardProp
     useEffect(() => {
         setMounted(true);
     }, []);
+
+    // Menu handlers
+    const handleMenuToggle = () => {
+        setIsMenuOpen(!isMenuOpen);
+    };
+
+    const handleMenuClose = () => {
+        setIsMenuOpen(false);
+    };
+
+    const handleEdit = () => {
+        setShowEditModal(true);
+        handleMenuClose();
+    };
+
+    const handleDelete = () => {
+        setShowDeleteModal(true);
+        handleMenuClose();
+    };
+
+    const handleShare = () => {
+        setShowShareModal(true);
+        handleMenuClose();
+    };
+
+    const handleDeleteConfirm = async () => {
+        setIsDeleting(true);
+        try {
+            await del(`/api/cases/${id}`);
+            console.log('Case deleted successfully:', id);
+
+            // Close modal
+            setShowDeleteModal(false);
+
+            // Show success toast
+            showToast('success', `Case "${name}" deleted successfully`);
+
+            // Notify parent component
+            if (onCaseDeleted) {
+                onCaseDeleted(id);
+            }
+        } catch (error) {
+            console.error('Failed to delete case:', error);
+            // Show error toast
+            showToast('error', `Failed to delete case "${name}". Please try again.`);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const handleEditSubmit = (updatedCaseData: UICaseData) => {
+        console.log('Case updated successfully:', updatedCaseData);
+        setShowEditModal(false);
+
+        // Show success toast
+        showToast('success', `Case "${updatedCaseData.name}" updated successfully`);
+
+        // Notify parent component
+        if (onCaseUpdated) {
+            onCaseUpdated(updatedCaseData);
+        }
+    };
 
     const getSeasonColor = (season: string) => {
         switch (season.toLowerCase()) {
@@ -80,6 +158,24 @@ export default function CaseCard({ caseData, isCommunity = false }: CaseCardProp
                         </button>
                     )}
 
+                    {/* Actions Menu Button - Only show for owner */}
+                    {isOwner && (
+                        <div className="absolute top-4 right-4 z-10">
+                            <MenuButton
+                                onClick={handleMenuToggle}
+                                isOpen={isMenuOpen}
+                                aria-label="Case actions menu"
+                            />
+                            <CaseActionsMenu
+                                isOpen={isMenuOpen}
+                                onClose={handleMenuClose}
+                                onEdit={handleEdit}
+                                onDelete={handleDelete}
+                                onShare={handleShare}
+                            />
+                        </div>
+                    )}
+
                     {/* Community Stats */}
                     {(likeCount !== undefined || views !== undefined) && (
                         <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
@@ -123,6 +219,24 @@ export default function CaseCard({ caseData, isCommunity = false }: CaseCardProp
                 </>
             )}
 
+            {/* Actions Menu for Non-Community Cases (User's Own Cases) */}
+            {!isCommunity && isOwner && (
+                <div className="absolute top-4 right-4 z-10">
+                    <MenuButton
+                        onClick={handleMenuToggle}
+                        isOpen={isMenuOpen}
+                        aria-label="Case actions menu"
+                    />
+                    <CaseActionsMenu
+                        isOpen={isMenuOpen}
+                        onClose={handleMenuClose}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                        onShare={handleShare}
+                    />
+                </div>
+            )}
+
             <div className="p-6 flex-1 flex flex-col">
                 <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
@@ -135,11 +249,6 @@ export default function CaseCard({ caseData, isCommunity = false }: CaseCardProp
                         </div>
                     </div>
 
-                    {isOwner && !isCommunity && (
-                        <button className="h-8 w-8 p-0 rounded-md hover:bg-accent flex items-center justify-center">
-                            <MoreHorizontal className="h-4 w-4" />
-                        </button>
-                    )}
                 </div>
 
                 {/* Description for Community Cases */}
@@ -250,6 +359,29 @@ export default function CaseCard({ caseData, isCommunity = false }: CaseCardProp
                     </button>
                 </div>
             </div>
+
+            {/* Modals */}
+            <DeleteConfirmModal
+                isOpen={showDeleteModal}
+                onClose={() => setShowDeleteModal(false)}
+                onConfirm={handleDeleteConfirm}
+                caseData={caseData}
+                isLoading={isDeleting}
+            />
+
+            <ShareModal
+                isOpen={showShareModal}
+                onClose={() => setShowShareModal(false)}
+                caseData={caseData}
+            />
+
+            <CreateCaseModal
+                isOpen={showEditModal}
+                onClose={() => setShowEditModal(false)}
+                onSubmit={handleEditSubmit}
+                editData={caseData}
+                mode="edit"
+            />
         </div>
     );
 }

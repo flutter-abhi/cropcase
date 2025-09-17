@@ -136,14 +136,26 @@ export class PaginatedCaseService {
     }
 
     /**
-     * Fetch community cases with pagination
+     * Fetch community cases with pagination and filters
      */
     async fetchCommunityCases(params: CommunityCasesParams): Promise<PaginatedResponse<ApiCaseResponse>> {
-        const { page = 1, limit = PAGINATION_CONFIG.DEFAULT_PAGE_SIZE, excludeUserId } = params;
+        const {
+            page = 1,
+            limit = PAGINATION_CONFIG.DEFAULT_PAGE_SIZE,
+            q,
+            season,
+            tags,
+            minLand,
+            maxLand,
+            sortBy,
+            sortOrder
+        } = params;
 
         this.validatePaginationParams(page, limit);
 
-        const cacheKey = CACHE_KEYS.COMMUNITY_CASES(page, limit);
+        // Build cache key with filters
+        const filters = { q, season, tags, minLand, maxLand, sortBy, sortOrder };
+        const cacheKey = CACHE_KEYS.COMMUNITY_CASES(page, limit, filters);
 
         // Check cache first
         const cached = this.cacheManager.get(cacheKey);
@@ -159,12 +171,23 @@ export class PaginatedCaseService {
             return this.pendingRequests.get(cacheKey)!;
         }
 
-        // Use community cases endpoint to get public cases excluding current user
-        const requestPromise = this.makeRequest('/api/cases/community', {
+        // Build request parameters
+        const requestParams: Record<string, unknown> = {
             page,
-            limit,
-            userId: excludeUserId
-        });
+            limit
+        };
+
+        // Add filter parameters if provided
+        if (q) requestParams.q = q;
+        if (season && season !== 'all') requestParams.season = season;
+        if (tags && Array.isArray(tags) && tags.length > 0) requestParams.tags = tags.join(',');
+        if (minLand !== undefined) requestParams.minLand = minLand;
+        if (maxLand !== undefined) requestParams.maxLand = maxLand;
+        if (sortBy) requestParams.sortBy = sortBy;
+        if (sortOrder) requestParams.sortOrder = sortOrder;
+
+        // Use community cases endpoint to get public cases excluding current user
+        const requestPromise = this.makeRequest('/api/cases/community', requestParams);
 
         this.pendingRequests.set(cacheKey, requestPromise);
 
@@ -222,7 +245,7 @@ export class PaginatedCaseService {
 
         if (q) searchParams.append('q', q);
         if (season && season !== 'all') searchParams.append('season', season);
-        if (tags) searchParams.append('tags', tags);
+        if (tags && Array.isArray(tags) && tags.length > 0) searchParams.append('tags', tags.join(','));
         if (minLand) searchParams.append('minLand', minLand.toString());
         if (maxLand) searchParams.append('maxLand', maxLand.toString());
         if (sortBy) searchParams.append('sortBy', sortBy);

@@ -35,8 +35,13 @@ export const FilterControls: React.FC<FilterControlsProps> = ({
 
     const handleSearchChange = useCallback((value: string) => {
         setLocalSearchTerm(value);
-        debouncedSetSearchTerm(value);
-    }, [debouncedSetSearchTerm]);
+        // Clear search immediately, debounce only for typing
+        if (value === '') {
+            filters.setSearchTerm('');
+        } else {
+            debouncedSetSearchTerm(value);
+        }
+    }, [debouncedSetSearchTerm, filters]);
 
     const handleTagToggle = useCallback((tag: string) => {
         const newTags = filters.tags.includes(tag)

@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
                 return NextResponse.json(JSON.parse(cachedData));
             }
         } catch (cacheError) {
-            console.log('⚠️ Cache error (continuing with DB):', cacheError.message);
+            console.log('⚠️ Cache error (continuing with DB):', (cacheError as Error).message);
         }
 
         // Build where clause - simplified version
@@ -83,9 +83,19 @@ export async function GET(request: NextRequest) {
             }
         }
 
-        // Build sort order
+        // Build sort order - map frontend sort options to database fields
         const orderBy: Record<string, 'asc' | 'desc'> = {};
-        orderBy[sortBy] = sortOrder as 'asc' | 'desc';
+
+        // Map frontend sort options to actual database fields
+        const sortFieldMap: Record<string, string> = {
+            'recent': 'createdAt',
+            'popular': 'views', // Using views as popularity proxy
+            'views': 'views',
+            'alphabetical': 'name'
+        };
+
+        const dbSortField = sortFieldMap[sortBy] || 'createdAt';
+        orderBy[dbSortField] = sortOrder as 'asc' | 'desc';
 
         // Debug logging (remove in production)
         // console.log('Search whereClause:', JSON.stringify(whereClause, null, 2));
@@ -171,7 +181,7 @@ export async function GET(request: NextRequest) {
         const uniqueTags = [...new Set(allTags)].sort();
 
         const response: SearchResponse = {
-            cases: transformedCases as unknown as UICaseData[],
+            data: transformedCases as unknown as UICaseData[],
             filters: {
                 appliedFilters: {
                     q: q || undefined,
@@ -199,7 +209,7 @@ export async function GET(request: NextRequest) {
             await redis.setex(cacheKey, 300, JSON.stringify(response));
             console.log('💾 Cached search API response');
         } catch (cacheError) {
-            console.log('⚠️ Failed to cache search response:', cacheError.message);
+            console.log('⚠️ Failed to cache search response:', (cacheError as Error).message);
         }
 
         return NextResponse.json(response);

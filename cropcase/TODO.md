@@ -8,16 +8,15 @@
 
 ## 🔍 Search & Filtering
 - [ ] Implement case search functionality
-- [ ] Add advanced filtering options (by season, location, etc.)
+- [ ] Add advanced filtering options (by season, location, etc.)=============done
 - [ ] Create case sorting options
 - [ ] Add pagination for large datasets
 
 
 
-// like functionality not working
-filter functionality not working 
-implement caching 
+// like functionality not working == done 
+implement caching == done 
 
-refresh button not working
+refresh button not working == done
 
 

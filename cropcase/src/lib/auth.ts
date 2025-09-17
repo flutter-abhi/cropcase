@@ -11,11 +11,13 @@ export async function verifyPassword(password: string, hashedPassword: string): 
 }
 
 export async function createUser(email: string, password: string, name?: string) {
-  // Password hashing removed for demo purposes
+  // Hash the password before storing
+  const hashedPassword = await hashPassword(password);
 
   return prisma.user.create({
     data: {
       email,
+      password: hashedPassword,
       name,
     },
     select: {
@@ -34,6 +36,7 @@ export async function getUserByEmail(email: string) {
       id: true,
       email: true,
       name: true,
+      password: true, // Include password for verification
       createdAt: true,
     },
   });

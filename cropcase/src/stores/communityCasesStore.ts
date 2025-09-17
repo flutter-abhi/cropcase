@@ -8,8 +8,9 @@ import { devtools } from 'zustand/middleware';
 import { UICaseData } from '@/types/ui';
 import { paginatedCaseService } from '@/services/paginatedCaseService';
 import { transformApiCasesToUI } from '@/lib/transformers';
-import { PAGINATION_CONFIG } from '@/constants/pagination';
+import { PAGINATION_CONFIG, SORT_OPTIONS } from '@/constants/pagination';
 import { useAuthStore } from '@/stores/authStore';
+import { FilterState } from '@/types/pagination';
 
 interface CommunityCasesState {
     // Data management
@@ -28,6 +29,9 @@ interface CommunityCasesState {
     loadingPage: number | null;
     error: string | null;
 
+    // Filter state
+    filters: FilterState;
+
     // Cache management
     cacheTimestamps: Record<number, number>;
 
@@ -41,12 +45,31 @@ interface CommunityCasesState {
     refresh: () => Promise<void>;
     clearCache: () => void;
 
+    // Filter actions
+    setSearchTerm: (term: string) => void;
+    setSortBy: (sort: string) => void;
+    setSortOrder: (order: 'asc' | 'desc') => void;
+    setSeason: (season: string) => void;
+    setTags: (tags: string[]) => void;
+    setLandRange: (min?: number, max?: number) => void;
+    clearFilters: () => void;
+
     // Getters
     getCurrentPageData: () => UICaseData[];
     isPageCached: (page: number) => boolean;
     isPageStale: (page: number) => boolean;
     getStats: () => { totalCases: number; totalLand: number };
 }
+
+const initialFilterState: FilterState = {
+    searchTerm: '',
+    sortBy: SORT_OPTIONS.RECENT,
+    sortOrder: 'desc',
+    season: 'all',
+    tags: [],
+    minLand: undefined,
+    maxLand: undefined,
+};
 
 const initialState = {
     pages: {},
@@ -59,6 +82,7 @@ const initialState = {
     loading: false,
     loadingPage: null,
     error: null,
+    filters: initialFilterState,
     cacheTimestamps: {},
 };
 
@@ -107,7 +131,13 @@ export const useCommunityCasesStore = create<CommunityCasesState>()(
                 const response = await paginatedCaseService.fetchCommunityCases({
                     page,
                     limit: state.pageSize,
-                    excludeUserId: currentUserId,
+                    q: state.filters.searchTerm,
+                    season: state.filters.season,
+                    tags: state.filters.tags,
+                    minLand: state.filters.minLand,
+                    maxLand: state.filters.maxLand,
+                    sortBy: state.filters.sortBy,
+                    sortOrder: state.filters.sortOrder,
                 });
 
                 const uiCases = transformApiCasesToUI(response.data, currentUserId);
@@ -218,6 +248,83 @@ export const useCommunityCasesStore = create<CommunityCasesState>()(
                 totalCases: totalCount,
                 totalLand: currentPageData.reduce((total, case_) => total + case_.totalLand, 0),
             };
+        },
+
+        // Filter actions
+        setSearchTerm: (term: string) => {
+            set((state) => ({
+                filters: {
+                    ...state.filters,
+                    searchTerm: term,
+                },
+            }));
+            // Clear cache and go to first page when searching
+            get().clearCache();
+            get().goToPage(1);
+        },
+
+        setSortBy: (sort: string) => {
+            set((state) => ({
+                filters: {
+                    ...state.filters,
+                    sortBy: sort as 'recent' | 'popular' | 'views' | 'alphabetical',
+                },
+            }));
+            get().clearCache();
+            get().refresh();
+        },
+
+        setSortOrder: (order: 'asc' | 'desc') => {
+            set((state) => ({
+                filters: {
+                    ...state.filters,
+                    sortOrder: order,
+                },
+            }));
+            get().clearCache();
+            get().refresh();
+        },
+
+        setSeason: (season: string) => {
+            set((state) => ({
+                filters: {
+                    ...state.filters,
+                    season,
+                },
+            }));
+            get().clearCache();
+            get().goToPage(1);
+        },
+
+        setTags: (tags: string[]) => {
+            set((state) => ({
+                filters: {
+                    ...state.filters,
+                    tags,
+                },
+            }));
+            get().clearCache();
+            get().goToPage(1);
+        },
+
+        setLandRange: (min?: number, max?: number) => {
+            set((state) => ({
+                filters: {
+                    ...state.filters,
+                    minLand: min,
+                    maxLand: max,
+                },
+            }));
+            get().clearCache();
+            get().goToPage(1);
+        },
+
+        clearFilters: () => {
+            set(() => ({
+                filters: initialFilterState,
+            }));
+            get().clearCache();
+            get().goToPage(1);
         },
     }), {
         name: 'community-cases-store',

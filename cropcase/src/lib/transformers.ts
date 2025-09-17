@@ -7,6 +7,7 @@ export const transformCropCaseToUI = (cropCase: CropCase): UICaseData => {
         id: cropCase.id,
         name: cropCase.name,
         crops: cropCase.crops.map(cc => ({
+            id: cc.crop.id, // Include crop.id for editing
             name: cc.crop.name,
             weight: cc.weight,
             season: cc.crop.season
@@ -32,6 +33,7 @@ export const transformApiCaseToUI = (apiCase: ApiCaseResponse, currentUserId?: s
         id: apiCase.id,
         name: apiCase.name,
         crops: apiCase.crops.map(cc => ({
+            id: cc.crop.id, // Include crop.id for editing
             name: cc.crop.name,
             weight: cc.weight,
             season: cc.crop.season

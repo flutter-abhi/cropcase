@@ -2,7 +2,9 @@
 
 import React from 'react';
 import { useRequireAuth } from '@/hooks/useAuth';
-import { useCommunityPaginatedCases, useFilters } from '@/hooks/usePaginatedCases';
+import { useCommunityPaginatedCases } from '@/hooks/usePaginatedCases';
+import { useCommunityCasesStore } from '@/stores/communityCasesStore';
+import { UICaseData } from '@/types/ui';
 import Navigation from '@/components/homePageComponent/navbar';
 import { FilterControls } from '@/components/filters/FilterControls';
 import { Pagination } from '@/components/pagination/PaginationControls';
@@ -15,7 +17,53 @@ export default function CommunityCasesPage() {
 
     // Use your existing community pagination system
     const pagination = useCommunityPaginatedCases();
-    const filters = useFilters();
+    const communityStore = useCommunityCasesStore();
+
+    // Create filters object that matches the expected interface
+    const filters = {
+        searchTerm: communityStore.filters.searchTerm,
+        sortBy: communityStore.filters.sortBy,
+        sortOrder: communityStore.filters.sortOrder,
+        season: communityStore.filters.season,
+        tags: communityStore.filters.tags,
+        landRange: {
+            min: communityStore.filters.minLand,
+            max: communityStore.filters.maxLand,
+        },
+        setSearchTerm: communityStore.setSearchTerm,
+        setSortBy: communityStore.setSortBy,
+        setSortOrder: communityStore.setSortOrder,
+        setSeason: communityStore.setSeason,
+        setTags: communityStore.setTags,
+        setLandRange: communityStore.setLandRange,
+        clearFilters: communityStore.clearFilters,
+        hasActiveFilters:
+            communityStore.filters.searchTerm !== '' ||
+            communityStore.filters.season !== 'all' ||
+            communityStore.filters.tags.length > 0 ||
+            communityStore.filters.minLand !== undefined ||
+            communityStore.filters.maxLand !== undefined,
+        filterCount: [
+            communityStore.filters.searchTerm !== '',
+            communityStore.filters.season !== 'all',
+            communityStore.filters.tags.length > 0,
+            communityStore.filters.minLand !== undefined || communityStore.filters.maxLand !== undefined,
+        ].filter(Boolean).length,
+    };
+
+    // Handle case deletion
+    const handleCaseDeleted = async (caseId: string) => {
+        console.log('Case deleted, refreshing data:', caseId);
+        // Refresh the data to remove the deleted case
+        await communityStore.refresh();
+    };
+
+    // Handle case update
+    const handleCaseUpdated = async (updatedCaseData: UICaseData) => {
+        console.log('Case updated, refreshing data:', updatedCaseData.id);
+        // Refresh the data to show updated case
+        await communityStore.refresh();
+    };
 
     if (authLoading) {
         return (
@@ -106,6 +154,8 @@ export default function CommunityCasesPage() {
                                             key={caseData.id}
                                             caseData={caseData}
                                             isCommunity={true}
+                                            onCaseDeleted={handleCaseDeleted}
+                                            onCaseUpdated={handleCaseUpdated}
                                         />
                                     ))}
                                 </div>

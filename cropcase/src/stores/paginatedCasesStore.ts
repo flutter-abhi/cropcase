@@ -1,7 +1,4 @@
-/**
- * Paginated Cases Store
- * Production-ready Zustand store with hybrid pagination approach
- */
+
 
 import { create } from 'zustand';
 import { devtools, subscribeWithSelector } from 'zustand/middleware';

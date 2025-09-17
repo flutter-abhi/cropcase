@@ -17,7 +17,7 @@ export const useApi = () => {
             ...options.headers,
         };
 
-        try {
+        try {           
             const response = await fetch(url, { ...options, headers });
 
             if (response.status === 401 && refreshToken && retryCount < 1) {

@@ -28,8 +28,8 @@ export const PAGINATION_CONFIG = {
 export const CACHE_KEYS = {
     MY_CASES: (page: number, limit: number, userId?: string) =>
         `my-cases-${userId || 'current'}-${page}-${limit}`,
-    COMMUNITY_CASES: (page: number, limit: number) =>
-        `community-cases-${page}-${limit}`,
+    COMMUNITY_CASES: (page: number, limit: number, filters?: Record<string, unknown>) =>
+        `community-cases-${page}-${limit}${filters ? `-${JSON.stringify(filters)}` : ''}`,
     SEARCH_CASES: (query: string, page: number, limit: number, filters: Record<string, unknown>) =>
         `search-cases-${query}-${page}-${limit}-${JSON.stringify(filters)}`,
 } as const;

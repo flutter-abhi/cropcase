@@ -24,7 +24,7 @@ export async function GET(
                 return NextResponse.json(JSON.parse(cachedData));
             }
         } catch (cacheError) {
-            console.log('⚠️ Cache error (continuing with DB):', cacheError.message);
+            console.log('⚠️ Cache error (continuing with DB):', (cacheError as Error).message);
         }
 
         const caseData = await prisma.case.findUnique({
@@ -63,7 +63,7 @@ export async function GET(
             await redis.setex(cacheKey, 600, JSON.stringify(caseData));
             console.log('💾 Cached case detail API response');
         } catch (cacheError) {
-            console.log('⚠️ Failed to cache case detail response:', cacheError.message);
+            console.log('⚠️ Failed to cache case detail response:', (cacheError as Error).message);
         }
 
         return NextResponse.json(caseData);
@@ -115,24 +115,61 @@ export async function PUT(
             );
         }
 
+        // Prepare update data
+        const updateData: {
+            name: string;
+            description: string | null;
+            totalLand: number;
+            location: string | null;
+            isPublic: boolean;
+            startDate: Date | null;
+            endDate: Date | null;
+            budget: number | null;
+            notes: string | null;
+            status: string;
+            tags: string;
+            efficiency: number | null;
+            estimatedProfit: number | null;
+            crops?: {
+                deleteMany: {};
+                create: Array<{
+                    cropId: string;
+                    weight: number;
+                    notes: string | null;
+                }>;
+            };
+        } = {
+            name: body.name || existingCase.name,
+            description: body.description !== undefined ? body.description : existingCase.description,
+            totalLand: body.totalLand ? parseFloat(body.totalLand) : existingCase.totalLand,
+            location: body.location !== undefined ? body.location : existingCase.location,
+            isPublic: body.isPublic !== undefined ? body.isPublic : existingCase.isPublic,
+            startDate: body.startDate ? new Date(body.startDate) : existingCase.startDate,
+            endDate: body.endDate ? new Date(body.endDate) : existingCase.endDate,
+            budget: body.budget !== undefined ? (body.budget ? parseFloat(body.budget) : null) : existingCase.budget,
+            notes: body.notes !== undefined ? body.notes : existingCase.notes,
+            status: body.status || existingCase.status,
+            tags: body.tags ? JSON.stringify(body.tags) : existingCase.tags,
+            efficiency: body.efficiency ? parseFloat(body.efficiency) : existingCase.efficiency,
+            estimatedProfit: body.estimatedProfit ? parseFloat(body.estimatedProfit) : existingCase.estimatedProfit,
+        };
+
+        // Handle crops update if provided
+        if (body.crops && Array.isArray(body.crops)) {
+            updateData.crops = {
+                deleteMany: {}, // Delete all existing crops
+                create: body.crops.map((crop: { cropId: string; weight: string | number; notes?: string }) => ({
+                    cropId: crop.cropId,
+                    weight: parseInt(crop.weight),
+                    notes: crop.notes || null,
+                }))
+            };
+        }
+
         // Update case
         const updatedCase = await prisma.case.update({
             where: { id: caseId },
-            data: {
-                name: body.name || existingCase.name,
-                description: body.description !== undefined ? body.description : existingCase.description,
-                totalLand: body.totalLand ? parseFloat(body.totalLand) : existingCase.totalLand,
-                location: body.location !== undefined ? body.location : existingCase.location,
-                isPublic: body.isPublic !== undefined ? body.isPublic : existingCase.isPublic,
-                startDate: body.startDate ? new Date(body.startDate) : existingCase.startDate,
-                endDate: body.endDate ? new Date(body.endDate) : existingCase.endDate,
-                budget: body.budget !== undefined ? (body.budget ? parseFloat(body.budget) : null) : existingCase.budget,
-                notes: body.notes !== undefined ? body.notes : existingCase.notes,
-                status: body.status || existingCase.status,
-                tags: body.tags ? JSON.stringify(body.tags) : existingCase.tags,
-                efficiency: body.efficiency ? parseFloat(body.efficiency) : existingCase.efficiency,
-                estimatedProfit: body.estimatedProfit ? parseFloat(body.estimatedProfit) : existingCase.estimatedProfit,
-            },
+            data: updateData,
             include: {
                 user: {
                     select: {
@@ -157,10 +194,19 @@ export async function PUT(
 
         // Invalidate cache when case is updated
         try {
+            // Invalidate case detail cache
             await redis.del(`case:detail:${caseId}`);
             console.log('🗑️ Invalidated case detail cache after update');
+
+            // Invalidate my-cases cache for this user (all pages and sort options)
+            const myCasesPattern = `my-cases:user:${userId}:*`;
+            const myCasesKeys = await redis.keys(myCasesPattern);
+            if (myCasesKeys.length > 0) {
+                await redis.del(...myCasesKeys);
+                console.log(`🗑️ Invalidated ${myCasesKeys.length} my-cases cache entries for user ${userId}`);
+            }
         } catch (cacheError) {
-            console.log('⚠️ Failed to invalidate case cache:', cacheError.message);
+            console.log('⚠️ Failed to invalidate case cache:', (cacheError as Error).message);
         }
 
         return NextResponse.json(updatedCase);
@@ -218,10 +264,19 @@ export async function DELETE(
 
         // Invalidate cache when case is deleted
         try {
+            // Invalidate case detail cache
             await redis.del(`case:detail:${caseId}`);
             console.log('🗑️ Invalidated case detail cache after deletion');
+
+            // Invalidate my-cases cache for this user (all pages and sort options)
+            const myCasesPattern = `my-cases:user:${userId}:*`;
+            const myCasesKeys = await redis.keys(myCasesPattern);
+            if (myCasesKeys.length > 0) {
+                await redis.del(...myCasesKeys);
+                console.log(`🗑️ Invalidated ${myCasesKeys.length} my-cases cache entries for user ${userId}`);
+            }
         } catch (cacheError) {
-            console.log('⚠️ Failed to invalidate case cache:', cacheError.message);
+            console.log('⚠️ Failed to invalidate case cache:', (cacheError as Error).message);
         }
 
         return NextResponse.json(

@@ -44,12 +44,22 @@ export async function GET(request: NextRequest) {
                 return NextResponse.json(JSON.parse(cachedData));
             }
         } catch (cacheError) {
-            console.log('⚠️ Cache error (continuing with DB):', cacheError.message);
+            console.log('⚠️ Cache error (continuing with DB):', (cacheError as Error).message);
         }
 
-        // Build sort order
+        // Build sort order - map frontend sort options to database fields
         const orderBy: Record<string, 'asc' | 'desc'> = {};
-        orderBy[sortBy] = sortOrder as 'asc' | 'desc';
+
+        // Map frontend sort options to actual database fields
+        const sortFieldMap: Record<string, string> = {
+            'recent': 'createdAt',
+            'popular': 'views', // Using views as popularity proxy
+            'views': 'views',
+            'alphabetical': 'name'
+        };
+
+        const dbSortField = sortFieldMap[sortBy] || 'createdAt';
+        orderBy[dbSortField] = sortOrder as 'asc' | 'desc';
 
         // Fetch user's cases with pagination
         const [cases, totalCount] = await Promise.all([
@@ -94,26 +104,26 @@ export async function GET(request: NextRequest) {
         const hasPrev = page > 1;
 
         // Calculate stats
-       // const totalLand = cases.reduce((sum, case_) => sum + case_.totalLand, 0);
-       // const averageLandPerCase = totalCount > 0 ? totalLand / totalCount : 0;
+        // const totalLand = cases.reduce((sum, case_) => sum + case_.totalLand, 0);
+        // const averageLandPerCase = totalCount > 0 ? totalLand / totalCount : 0;
 
         const responseData = {
-                data: cases,
-                pagination: {
-                    page: page,
-                    limit: limit,
-                    total: totalCount,
-                    totalPages,
-                    hasNext,
-                    hasPrev
-                }
-            };
+            data: cases,
+            pagination: {
+                page: page,
+                limit: limit,
+                total: totalCount,
+                totalPages,
+                hasNext,
+                hasPrev
+            }
+        };
         // Cache the response for 10 minutes (user's own data changes less frequently)
         try {
             await redis.setex(cacheKey, 600, JSON.stringify(responseData));
             console.log('💾 Cached my-cases API response');
         } catch (cacheError) {
-            console.log('⚠️ Failed to cache my-cases response:', cacheError.message);
+            console.log('⚠️ Failed to cache my-cases response:', (cacheError as Error).message);
         }
 
         return NextResponse.json(responseData);

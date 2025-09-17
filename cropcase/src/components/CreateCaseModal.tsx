@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import BasicInfoStep from './CreateCaseSteps/BasicInfoStep';
 import CropSelectionStep from './CreateCaseSteps/CropSelectionStep';
@@ -11,17 +11,20 @@ import { UICaseData } from '@/types/ui';
 import { transformApiCaseToUI } from '@/lib/transformers';
 import { useApi } from '@/hooks/useApi';
 import { useAuth } from '@/hooks/useAuth';
+import { ApiCaseResponse } from '@/services/caseService';
 
 interface CreateCaseModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSubmit: (caseData: UICaseData) => void;
+    editData?: UICaseData; // Optional data for editing
+    mode?: 'create' | 'edit'; // Modal mode
 }
 
 
 
-export default function CreateCaseModal({ isOpen, onClose, onSubmit }: CreateCaseModalProps) {
-    const { post } = useApi();
+export default function CreateCaseModal({ isOpen, onClose, onSubmit, editData, mode = 'create' }: CreateCaseModalProps) {
+    const { post, put } = useApi();
     const { user } = useAuth();
     const {
         formData,
@@ -32,8 +35,17 @@ export default function CreateCaseModal({ isOpen, onClose, onSubmit }: CreateCas
         resetForm,
         nextStep,
         prevStep,
+        populateFormForEdit,
     } = useFormStore();
 
+    // Populate form with edit data when modal opens
+    useEffect(() => {
+        if (isOpen && editData && mode === 'edit') {
+            populateFormForEdit(editData);
+        } else if (isOpen && mode === 'create') {
+            resetForm();
+        }
+    }, [isOpen, editData, mode, populateFormForEdit, resetForm]);
 
     const steps = [
         { id: 1, title: "Basic Info", icon: "📝" },
@@ -82,9 +94,6 @@ export default function CreateCaseModal({ isOpen, onClose, onSubmit }: CreateCas
             setIsSubmitting(true);
 
             try {
-                // TODO: Replace with actual user ID from authentication
-                const dummyUserId = "dummy-user-123";
-
                 // Use crop IDs from form data (no API call needed!)
                 const mappedCrops = formData.crops.map(formCrop => {
                     if (!formCrop.id) {
@@ -100,7 +109,6 @@ export default function CreateCaseModal({ isOpen, onClose, onSubmit }: CreateCas
 
                 // Prepare API data
                 const apiData = {
-                    userId: dummyUserId,
                     name: formData.name,
                     description: formData.description,
                     totalLand: formData.totalLand,
@@ -111,18 +119,24 @@ export default function CreateCaseModal({ isOpen, onClose, onSubmit }: CreateCas
                     budget: formData.budget,
                     notes: formData.notes,
                     status: 'active',
-                    tags: formData.tags,
+                    tags: Array.isArray(formData.tags) ? formData.tags.join(',') : formData.tags,
                     crops: mappedCrops
                 };
 
-                // Call API to create case
-                const createdCase = await post('/api/cases', apiData);
+                let result;
+                if (mode === 'edit' && editData) {
+                    // Update existing case
+                    result = await put(`/api/cases/${editData.id}`, apiData);
+                } else {
+                    // Create new case
+                    result = await post('/api/cases', apiData);
+                }
 
                 // Transform API response directly to UI format
                 const currentUserId = user?.id || '';
-                const caseData = transformApiCaseToUI(createdCase, currentUserId);
+                const caseData = transformApiCaseToUI(result as ApiCaseResponse, currentUserId);
 
-                // Call the onSubmit callback with the created case data
+                // Call the onSubmit callback with the case data
                 onSubmit(caseData);
 
                 // Close modal and reset form
@@ -130,8 +144,8 @@ export default function CreateCaseModal({ isOpen, onClose, onSubmit }: CreateCas
                 onClose();
 
             } catch (error) {
-                console.error('Error creating case:', error);
-                alert('Failed to create case. Please try again.');
+                console.error(`Error ${mode === 'edit' ? 'updating' : 'creating'} case:`, error);
+                alert(`Failed to ${mode === 'edit' ? 'update' : 'create'} case. Please try again.`);
             } finally {
                 setIsSubmitting(false);
             }
@@ -158,7 +172,9 @@ export default function CreateCaseModal({ isOpen, onClose, onSubmit }: CreateCas
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-border">
                     <div>
-                        <h2 className="text-xl font-semibold text-foreground">Create New Case</h2>
+                        <h2 className="text-xl font-semibold text-foreground">
+                            {mode === 'edit' ? 'Edit Case' : 'Create New Case'}
+                        </h2>
                         <p className="text-sm text-muted-foreground">Step {currentStep} of 4</p>
                     </div>
                     <button
@@ -231,12 +247,12 @@ export default function CreateCaseModal({ isOpen, onClose, onSubmit }: CreateCas
                                 {isSubmitting ? (
                                     <>
                                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                                        Creating...
+                                        {mode === 'edit' ? 'Updating...' : 'Creating...'}
                                     </>
                                 ) : (
                                     <>
                                         <Check className="h-4 w-4" />
-                                        Create Case
+                                        {mode === 'edit' ? 'Update Case' : 'Create Case'}
                                     </>
                                 )}
                             </button>

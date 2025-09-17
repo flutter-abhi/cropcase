@@ -128,7 +128,7 @@ export interface PaginationParams {
 export interface SearchParams extends PaginationParams {
     q?: string;
     season?: string;
-    tags?: string;
+    tags?: string[];
     minLand?: number;
     maxLand?: number;
 }
@@ -137,9 +137,7 @@ export interface MyCasesParams extends PaginationParams {
     userId: string;
 }
 
-export interface CommunityCasesParams extends PaginationParams {
-    excludeUserId?: string;
-}
+export type CommunityCasesParams = SearchParams;
 
 // Hook return types
 export interface UsePaginationReturn {

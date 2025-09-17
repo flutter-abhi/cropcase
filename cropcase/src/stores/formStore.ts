@@ -1,6 +1,22 @@
 import { create } from 'zustand';
 import { FormData } from '@/types/form';
 import { Crop } from '@/types/crop';
+import { UICaseData } from '@/types/ui';
+
+// Extended interface for edit data that includes all possible fields
+interface ExtendedCaseData extends Omit<UICaseData, 'crops'> {
+    startDate?: string | Date;
+    endDate?: string | Date;
+    budget?: number;
+    isPublic?: boolean;
+    notes?: string;
+    crops?: Array<{
+        id?: string;
+        name: string;
+        weight: number;
+        season: string;
+    }>;
+}
 
 interface FormState {
     // Form data
@@ -28,6 +44,7 @@ interface FormState {
     resetForm: () => void;
     nextStep: () => void;
     prevStep: () => void;
+    populateFormForEdit: (caseData: ExtendedCaseData) => void;
 }
 
 // Initial form data
@@ -108,5 +125,33 @@ export const useFormStore = create<FormState>((set, get) => ({
         if (currentStep > 1) {
             set({ currentStep: currentStep - 1 });
         }
+    },
+
+    populateFormForEdit: (caseData: ExtendedCaseData) => {
+        const formData: FormData = {
+            name: caseData.name || '',
+            description: caseData.description || '',
+            totalLand: caseData.totalLand || 0,
+            location: caseData.location || '',
+            startDate: caseData.startDate ? new Date(caseData.startDate).toISOString().split('T')[0] : '',
+            endDate: caseData.endDate ? new Date(caseData.endDate).toISOString().split('T')[0] : '',
+            budget: caseData.budget || 0,
+            isPublic: caseData.isPublic || false,
+            tags: caseData.tags || [],
+            crops: (caseData.crops || []).map(crop => ({
+                id: crop.id || '',
+                name: crop.name,
+                weight: crop.weight,
+                season: crop.season
+            })),
+            notes: caseData.notes || '',
+        };
+
+        set({
+            formData,
+            currentStep: 1,
+            errors: {},
+            isSubmitting: false
+        });
     },
 }));

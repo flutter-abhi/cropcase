@@ -3,7 +3,7 @@ export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getUserByEmail, updateUserLastLogin, createRefreshToken } from '@/lib/auth';
+import { getUserByEmail, updateUserLastLogin, createRefreshToken, verifyPassword } from '@/lib/auth';
 import { generateTokens } from '@/lib/jwt';
 
 const loginSchema = z.object({
@@ -14,7 +14,7 @@ const loginSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { email } = loginSchema.parse(body);
+    const { email, password } = loginSchema.parse(body);
 
     // Find user by email
     const user = await getUserByEmail(email);
@@ -26,8 +26,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // For demo purposes, accept any password
-    // In production, you would verify the password hash
+    // Verify the password
+    const isPasswordValid = await verifyPassword(password, user.password!);
+
+    if (!isPasswordValid) {
+      return NextResponse.json(
+        { error: 'Invalid email or password' },
+        { status: 401 }
+      );
+    }
 
     // Generate JWT tokens
     const { accessToken, refreshToken } = generateTokens({
@@ -43,7 +50,12 @@ export async function POST(request: NextRequest) {
     await updateUserLastLogin(user.id);
 
     // Return user without sensitive data
-    const userWithoutPassword = user;
+    const userWithoutPassword = {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      createdAt: user.createdAt,
+    };
 
     return NextResponse.json({
       message: 'Login successful',

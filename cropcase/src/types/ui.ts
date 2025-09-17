@@ -3,6 +3,7 @@ export interface UICaseData {
     id: string;
     name: string;
     crops: Array<{
+        id?: string; // Optional for backward compatibility
         name: string;
         weight: number;
         season: string;
