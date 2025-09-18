@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { User, AuthState } from '@/types/auth';
+import { hashPasswordForAuth } from '@/lib/crypto';
 
 
 // Add refresh lock to prevent multiple simultaneous refresh attempts
@@ -22,10 +23,13 @@ export const useAuthStore = create<AuthState>()(
                 set({ isLoading: true, error: null });
 
                 try {
+                    // Hash password using Web Crypto API
+                    const hashedPassword = await hashPasswordForAuth(password);
+
                     const response = await fetch('/api/auth/login', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email, password }),
+                        body: JSON.stringify({ email, password: hashedPassword }),
                     });
 
                     if (!response.ok) {
@@ -57,10 +61,13 @@ export const useAuthStore = create<AuthState>()(
                 set({ isLoading: true, error: null });
 
                 try {
+                    // Hash password using Web Crypto API
+                    const hashedPassword = await hashPasswordForAuth(password);
+
                     const response = await fetch('/api/auth/signup', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ email, password, name }),
+                        body: JSON.stringify({ email, password: hashedPassword, name }),
                     });
 
                     if (!response.ok) {

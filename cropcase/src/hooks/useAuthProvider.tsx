@@ -9,16 +9,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [isInitialized, setIsInitialized] = useState(false);
 
     useEffect(() => {
+        console.log('AuthProvider: refreshAuth =====');
+        refreshAuth();
+    }, []);
+    useEffect(() => {
         const initializeAuth = async () => {
-            // Only attempt refresh if we have a refresh token but no access token AND we're not already authenticated
-            if (refreshToken && !accessToken && !isAuthenticated && !isLoading) {
+            const isFirstVisit = !sessionStorage.getItem('auth-initialized');
+            const isPageRefresh = performance.navigation?.type === 1; // 1 = reload
+
+            if (refreshToken && !accessToken && !isAuthenticated && !isLoading && (isFirstVisit || isPageRefresh)) {
                 try {
+                    console.log('🔄 Initializing auth - first visit or page refresh');
                     await refreshAuth();
                 } catch (error) {
                     console.error('AuthProvider: Failed to refresh token on init:', error);
                     // Don't throw error, just continue
                 }
             }
+
+            // Mark as initialized in session storage
+            sessionStorage.setItem('auth-initialized', 'true');
             setIsInitialized(true);
         };
 

@@ -1,0 +1,35 @@
+{
+    "state": {
+        "user": {
+            "id": "1deb39a5-948a-4c32-b419-5f7c1e1f9540",
+            "email": "abhishekbjadhav5746@gmail.com",
+            "name": "Abhishek Jadhav",
+            "avatar": null,
+            "role": "USER",
+            "isVerified": false,
+            "createdAt": "2025-09-15T13:42:50.083Z"
+        },
+        "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NGM2ZGNlZC1iZmUxLTQ2NDItODhmMy1kODI3ZDZjYTg4ZTAiLCJlbWFpbCI6InJ1c2hpa2VzaDJAZ21haWwuY29tIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3NTgyMTI3NjcsImV4cCI6MTc1ODIxMzY2N30.APVqWjfZPF-K0JHCBqUb3_AByeHJFVTX_RP7K9ZbSMU",
+        "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NGM2ZGNlZC1iZmUxLTQ2NDItODhmMy1kODI3ZDZjYTg4ZTAiLCJlbWFpbCI6InJ1c2hpa2VzaDJAZ21haWwuY29tIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3NTgyMTI3NjcsImV4cCI6MTc1ODgxNzU2N30.pKu9NVNd03kdujYB7cnw_nBBjFxHAPAQ3DkktUw1nkg",
+        "isAuthenticated": true
+    },
+    "version": 0
+}
+
+{
+    "state": {
+        "user": {
+            "id": "64c6dced-bfe1-4642-88f3-d827d6ca88e0",
+            "email": "rushikesh2@gmail.com",
+            "name": "rushikesh",
+            "avatar": null,
+            "role": "USER",
+            "isVerified": false,
+            "createdAt": "2025-09-18T16:06:14.409Z"
+        },
+        "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NGM2ZGNlZC1iZmUxLTQ2NDItODhmMy1kODI3ZDZjYTg4ZTAiLCJlbWFpbCI6InJ1c2hpa2VzaDJAZ21haWwuY29tIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3NTgyMTI3NjcsImV4cCI6MTc1ODIxMzY2N30.APVqWjfZPF-K0JHCBqUb3_AByeHJFVTX_RP7K9ZbSMU",
+        "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NGM2ZGNlZC1iZmUxLTQ2NDItODhmMy1kODI3ZDZjYTg4ZTAiLCJlbWFpbCI6InJ1c2hpa2VzaDJAZ21haWwuY29tIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3NTgyMTI3NjcsImV4cCI6MTc1ODgxNzU2N30.pKu9NVNd03kdujYB7cnw_nBBjFxHAPAQ3DkktUw1nkg",
+        "isAuthenticated": true
+    },
+    "version": 0
+}
