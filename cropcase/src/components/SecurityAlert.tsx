@@ -43,8 +43,8 @@ export const SecurityAlert: React.FC<SecurityAlertProps> = ({ error, onDismiss }
                                     </h4>
                                     <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
                                         <li>• <strong>Token Validation:</strong> We check if your access token belongs to your account</li>
-                                        <li>• <strong>User ID Matching:</strong> We verify the token's user ID matches your stored profile</li>
-                                        <li>• <strong>Email Verification:</strong> We confirm the token's email matches your account email</li>
+                                        <li>• <strong>User ID Matching:</strong> We verify the tokens user ID matches your stored profile</li>
+                                        <li>• <strong>Email Verification:</strong> We confirm the tokens email matches your account email</li>
                                         <li>• <strong>Real-time Monitoring:</strong> We continuously monitor for token manipulation</li>
                                     </ul>
                                 </div>
