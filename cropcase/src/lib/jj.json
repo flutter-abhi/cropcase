@@ -9,26 +9,22 @@
             "isVerified": false,
             "createdAt": "2025-09-15T13:42:50.083Z"
         },
-        "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NGM2ZGNlZC1iZmUxLTQ2NDItODhmMy1kODI3ZDZjYTg4ZTAiLCJlbWFpbCI6InJ1c2hpa2VzaDJAZ21haWwuY29tIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3NTgyMTI3NjcsImV4cCI6MTc1ODIxMzY2N30.APVqWjfZPF-K0JHCBqUb3_AByeHJFVTX_RP7K9ZbSMU",
-        "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NGM2ZGNlZC1iZmUxLTQ2NDItODhmMy1kODI3ZDZjYTg4ZTAiLCJlbWFpbCI6InJ1c2hpa2VzaDJAZ21haWwuY29tIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3NTgyMTI3NjcsImV4cCI6MTc1ODgxNzU2N30.pKu9NVNd03kdujYB7cnw_nBBjFxHAPAQ3DkktUw1nkg",
+        "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI3OWIzMWMwMC1mNzAyLTRiMzItOTQ4Yy0wNmExMTQyYTMwZDIiLCJlbWFpbCI6InJ1c2hpa2VzaEBnbWFpbC5jb20iLCJpYXQiOjE3NTgzMDA3MTksImV4cCI6MTc1ODMwMTYxOX0.SmicMboBj0zazINSWv17uNeKBH1pgsvX_T8HyS58yaU",
+        "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI3OWIzMWMwMC1mNzAyLTRiMzItOTQ4Yy0wNmExMTQyYTMwZDIiLCJlbWFpbCI6InJ1c2hpa2VzaEBnbWFpbC5jb20iLCJpYXQiOjE3NTgzMDA3MTksImV4cCI6MTc1ODkwNTUxOX0.c7hfHY6kyUNMOqBFtQqOHnQuwmteJtgLyXuWjjy80Rw",
         "isAuthenticated": true
     },
     "version": 0
 }
-
 {
     "state": {
         "user": {
-            "id": "64c6dced-bfe1-4642-88f3-d827d6ca88e0",
-            "email": "rushikesh2@gmail.com",
+            "id": "79b31c00-f702-4b32-948c-06a1142a30d2",
+            "email": "rushikesh@gmail.com",
             "name": "rushikesh",
-            "avatar": null,
-            "role": "USER",
-            "isVerified": false,
-            "createdAt": "2025-09-18T16:06:14.409Z"
+            "createdAt": "2025-09-18T20:01:55.579Z"
         },
-        "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NGM2ZGNlZC1iZmUxLTQ2NDItODhmMy1kODI3ZDZjYTg4ZTAiLCJlbWFpbCI6InJ1c2hpa2VzaDJAZ21haWwuY29tIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3NTgyMTI3NjcsImV4cCI6MTc1ODIxMzY2N30.APVqWjfZPF-K0JHCBqUb3_AByeHJFVTX_RP7K9ZbSMU",
-        "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NGM2ZGNlZC1iZmUxLTQ2NDItODhmMy1kODI3ZDZjYTg4ZTAiLCJlbWFpbCI6InJ1c2hpa2VzaDJAZ21haWwuY29tIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3NTgyMTI3NjcsImV4cCI6MTc1ODgxNzU2N30.pKu9NVNd03kdujYB7cnw_nBBjFxHAPAQ3DkktUw1nkg",
+        "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI3OWIzMWMwMC1mNzAyLTRiMzItOTQ4Yy0wNmExMTQyYTMwZDIiLCJlbWFpbCI6InJ1c2hpa2VzaEBnbWFpbC5jb20iLCJpYXQiOjE3NTgzMDA3MTksImV4cCI6MTc1ODMwMTYxOX0.SmicMboBj0zazINSWv17uNeKBH1pgsvX_T8HyS58yaU",
+        "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI3OWIzMWMwMC1mNzAyLTRiMzItOTQ4Yy0wNmExMTQyYTMwZDIiLCJlbWFpbCI6InJ1c2hpa2VzaEBnbWFpbC5jb20iLCJpYXQiOjE3NTgzMDA3MTksImV4cCI6MTc1ODkwNTUxOX0.c7hfHY6kyUNMOqBFtQqOHnQuwmteJtgLyXuWjjy80Rw",
         "isAuthenticated": true
     },
     "version": 0

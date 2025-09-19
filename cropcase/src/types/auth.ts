@@ -24,7 +24,7 @@ export interface AuthState {
     login: (email: string, password: string) => Promise<void>;
     signup: (email: string, password: string, name?: string) => Promise<void>;
     logout: () => Promise<void>;
-    refreshAuth: () => Promise<void>;
+    refreshAuth: () => Promise<{ accessToken: string; refreshToken: string; user: User } | void>;
     clearError: () => void;
 
     // Profile management
@@ -33,6 +33,9 @@ export interface AuthState {
 
     // Utility functions
     getAuthHeaders: () => Record<string, string>;
+    validateTokenUserConsistency: () => boolean;
+    getFreshAccessToken: () => Promise<string | null>;
+    subscribeToTokenRefresh: (callback: (tokens: { accessToken: string; refreshToken: string; user: User }) => void) => void;
 }
 
 export interface LoginRequest {

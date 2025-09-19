@@ -1,48 +1,37 @@
 import { useAuthStore } from '@/stores/authStore';
 import { useCallback } from 'react';
-import { handleApiResponse } from '@/lib/apiUtils';
+import { handleApiResponse, apiFetch } from '@/lib/apiUtils';
 
 // Hook for making authenticated API calls
 export const useApi = () => {
-    const { refreshToken, refreshAuth, getAuthHeaders, logout } = useAuthStore();
+    const { getFreshAccessToken, logout } = useAuthStore();
 
     const authenticatedFetch = useCallback(async (
         url: string,
-        options: RequestInit = {},
-        retryCount = 0
+        options: RequestInit = {}
     ): Promise<unknown> => {
-        // Get fresh headers each time (important for retries after refresh)
-        const headers = {
-            ...getAuthHeaders(),
-            ...options.headers,
-        };
+        try {
+            console.log('🌐 Making authenticated API call to:', url);
 
-        try {           
-            const response = await fetch(url, { ...options, headers });
+            // Use the enhanced apiFetch with automatic token refresh
+            const response = await apiFetch(url, options, getFreshAccessToken);
 
-            if (response.status === 401 && refreshToken && retryCount < 1) {
-                console.log('Access token expired, attempting to refresh...');
-                try {
-                    await refreshAuth();
-                    console.log('Token refreshed successfully, retrying original request...');
-                    // Retry the original request with fresh headers (new token)
-                    return authenticatedFetch(url, options, retryCount + 1);
-                } catch (refreshError) {
-                    console.error('Failed to refresh token, logging out:', refreshError);
-                    logout(); // Log out if refresh fails
-                    throw new Error('Session expired. Please log in again.');
-                }
+            // If we still get 401 after token refresh attempt, user needs to login
+            if (response.status === 401) {
+                console.log('❌ Still got 401 after token refresh attempt - logging out');
+                logout();
+                throw new Error('Session expired. Please log in again.');
             }
 
             return handleApiResponse(response);
         } catch (error) {
             // Don't log every error, just critical ones
             if (error instanceof Error && !error.message.includes('HTTP error')) {
-                console.error('Authenticated API call failed:', error);
+                console.error('❌ Authenticated API call failed:', error);
             }
             throw error;
         }
-    }, [refreshToken, refreshAuth, getAuthHeaders, logout]);
+    }, [getFreshAccessToken, logout]);
 
     const get = useCallback((url: string, options?: RequestInit) =>
         authenticatedFetch(url, { ...options, method: 'GET' }),

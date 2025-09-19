@@ -79,3 +79,50 @@ export async function handleApiResponse(response: Response): Promise<unknown> {
     }
     return response.json();
 }
+
+// Enhanced API fetch with automatic token refresh and retry logic
+export async function apiFetch(
+    url: string,
+    options: RequestInit = {},
+    getFreshToken: () => Promise<string | null>
+): Promise<Response> {
+    const makeRequest = async (token?: string): Promise<Response> => {
+        const headers: Record<string, string> = {
+            'Content-Type': 'application/json',
+            ...options.headers as Record<string, string>,
+        };
+
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        return fetch(url, {
+            ...options,
+            headers,
+        });
+    };
+
+    // First attempt with current token
+    const token = await getFreshToken();
+    let response = await makeRequest(token || undefined);
+
+    // If we get 401, try to refresh token and retry once
+    if (response.status === 401 && token) {
+        console.log('🔄 Got 401, attempting token refresh and retry...');
+
+        try {
+            const freshToken = await getFreshToken();
+            if (freshToken && freshToken !== token) {
+                console.log('✅ Got fresh token, retrying request...');
+                response = await makeRequest(freshToken);
+            } else {
+                console.log('❌ Could not get fresh token or token unchanged');
+            }
+        } catch (error) {
+            console.error('❌ Token refresh failed during API call:', error);
+            // Return original 401 response
+        }
+    }
+
+    return response;
+}
